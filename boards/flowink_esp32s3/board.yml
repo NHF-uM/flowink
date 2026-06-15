@@ -1,0 +1,6 @@
+board:
+  name: flowink_esp32s3
+  full_name: FlowInk ESP32-S3
+  vendor: espressif
+  socs:
+  - name: esp32s3
