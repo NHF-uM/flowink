@@ -7,3 +7,8 @@ project(flowink)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+# 添加workq_common.h所在头文件目录
+target_include_directories(app PRIVATE
+    ${CMAKE_SOURCE_DIR}/../flowink/inc
+)
