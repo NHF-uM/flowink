@@ -11,7 +11,7 @@ config SAMPLE_LED_UPDATE_DELAY
 
 config SAMPLE_LED_BRIGHTNESS
 	int "LED brightness"
-	default 1
+	default 3
 	range 1 255
 	help
 	  Brightness level of each LED. Defaults to a low value to make
