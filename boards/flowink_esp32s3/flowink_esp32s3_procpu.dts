@@ -20,6 +20,7 @@
 		uart-0 = &uart0;
 		sw0 = &button0;
 		led-strip = &led_strip;
+		pwr-wakeup-io = &pwr_wakeup_io
 	};
 
 	chosen {
@@ -45,6 +46,14 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	gpio_keys {
+		compatible = "gpio_keys";
+
+		pwr_wakeup_io: wakeup_io {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+		}
+	}
 };
 
 &uart0 {

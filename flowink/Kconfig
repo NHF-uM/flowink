@@ -1,7 +1,16 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menu "WS2812 Sample Configuration"
+mainmenu "Deep-sleep"
+
+config WAKEUP_TIME_SEC
+	int "Wakeup time in seconds"
+	default 43200
+	help
+	  This option sets the time in seconds after which the device
+	  will wake up from deep sleep. Defaults to 12 hours.
+
+menu "WS2812"
 
 config SAMPLE_LED_UPDATE_DELAY
 	int "Delay between LED updates in ms"
