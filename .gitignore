@@ -2,3 +2,4 @@
 build
 led_strip
 threads
+deep_sleep

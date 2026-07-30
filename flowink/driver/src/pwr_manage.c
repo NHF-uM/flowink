@@ -10,11 +10,11 @@ LOG_MODULE_REGISTER(pwr_m);
 static int time_timer_wakup;
 
 #define WAKEUP_IO_NODE DT_ALIAS(pwr_wakeup_io)
-const static gpio_dt_spec wakeup_io_spec = GPIO_DT_SPEC_GET(WAKEUP_IO_NODE, gpios);
+static const struct gpio_dt_spec wakeup_io_spec = GPIO_DT_SPEC_GET(WAKEUP_IO_NODE, gpios);
 
 /// @brief esp32 进入深度休眠
 /// @param  无
-inline void pwr_enter_sleep(void)
+void pwr_enter_sleep(void)
 {
     int ret;
 
@@ -22,14 +22,14 @@ inline void pwr_enter_sleep(void)
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
 
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入 */
-    ret = gpio_pin_configure_dt(wakeup_io_spec, GPIO_INPUT);
+    ret = gpio_pin_configure_dt(&wakeup_io_spec, GPIO_INPUT);
     if (ret != 0)
     {
         printk("failed to configure pwr_wakeup pin \n");
-        return 0;
+        return;
     }
 
-    int time = time_timer_wakup ? time_timer_wakup : WAKEUP_TIME_SEC;
+    int time = time_timer_wakup ? time_timer_wakup : CONFIG_WAKEUP_TIME_SEC;
     esp_sleep_enable_timer_wakeup(time * 1000 * 1000);
 
     sys_poweroff();
