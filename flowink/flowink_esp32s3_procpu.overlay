@@ -5,6 +5,7 @@
 		ffs_sd: ffs_sd {
 			compatible = "zephyr,fstab,fatfs";
 			automount;
+			no-format;
 			disk-access;
 			mount-point = "/SD:";
 		};
@@ -12,12 +13,15 @@
 };
 
 &spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
-	cs-gpios = <>;
+	pinctrl-0 = <&spim3_default>;
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
+		/* sd卡上下电延迟时间，让其充分稳定 */
 		power-delay-ms = <2000>;
 		/* SPI时钟，SD卡SPI最高推荐24MHz，不要直接上24M先从8M调试 */
 		spi-max-frequency = <8000000>;
