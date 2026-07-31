@@ -7,6 +7,8 @@ LOG_MODULE_REGISTER(main);
 
 int main(void)
 {
+    /* 等待ic初始化 */
+    k_sleep(K_SECONDS(5));
     while (1) {
 
     }
