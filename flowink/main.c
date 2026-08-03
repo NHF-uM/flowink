@@ -25,18 +25,6 @@ const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
 const struct gpio_dt_spec epd_gpio_busy = GPIO_DT_SPEC_GET(EPD_NODE, busy_gpios);
 
-// 问题：90us的cs拉低，clk有效只占了7us左右
-const struct spi_config epd_spi_cfg = {
-    .frequency = 1000000,
-    .cs = {
-        .cs_is_gpio = true,
-        .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(epd)),
-        .delay = 0,
-    },
-    .operation = SPI_WORD_SET(8) | SPI_OP_MODE_MASTER,
-    .slave = 0,
-};
-
 /**
  * @brief 复位屏幕驱动芯片
  * @param  无
@@ -192,6 +180,10 @@ void epd_sleep(void)
     epd_send_data(0XA5);
 }
 
+/**
+ * @brief 填充结束后会等待刷新完成
+ * @param color 
+ */
 void epd_fill_color(uint8_t color)
 {
     uint16_t Width, Height;
@@ -239,27 +231,31 @@ int main(void)
         return 0;
     }
 
-    // if (!device_is_ready(&epd_spi))
-    // {
-    //     LOG_ERR("SPI device not ready");
-    //     return 0;
-    // }
+    if (!spi_is_ready_dt(&epd_spi))
+    {
+        LOG_ERR("SPI device not ready");
+        return 0;
+    }
 
     rgb_strip_on(BLUE);
 
-
     // 先复位再按逻辑分析仪，不然逻辑分析仪会跑飞
-    epd_wait_idle();
-    epd_reset();
-    k_sleep(K_MSEC(25));
-    epd_send_command(0x5a);
-    k_sleep(K_MSEC(25));
-    epd_send_data(0x75);
-    k_sleep(K_MSEC(25));
-    epd_sleep();
-    k_sleep(K_MSEC(25));
-    epd_init();
+    // epd_wait_idle();
+    // epd_reset();
+    // k_sleep(K_MSEC(25));
+    // epd_send_command(0x5a);
+    // k_sleep(K_MSEC(25));
+    // epd_send_data(0x75);
+    // k_sleep(K_MSEC(25));
+    // epd_sleep();
+    // k_sleep(K_MSEC(25));
+    // epd_init();
 
+    epd_init();
+    epd_fill_color(0x2);
+    k_sleep(K_MSEC(10000));
+    epd_fill_color(0x1);
+    epd_sleep();
 
     while (1)
     {
