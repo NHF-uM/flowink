@@ -240,16 +240,16 @@ int main(void)
     rgb_strip_on(BLUE);
 
     // 先复位再按逻辑分析仪，不然逻辑分析仪会跑飞
-    // epd_wait_idle();
-    // epd_reset();
-    // k_sleep(K_MSEC(25));
-    // epd_send_command(0x5a);
-    // k_sleep(K_MSEC(25));
-    // epd_send_data(0x75);
-    // k_sleep(K_MSEC(25));
-    // epd_sleep();
-    // k_sleep(K_MSEC(25));
-    // epd_init();
+//     epd_wait_idle();
+//     epd_reset();
+//     k_sleep(K_MSEC(25));
+//     epd_send_command(0x5a);
+//     k_sleep(K_MSEC(25));
+//     epd_send_data(0x75);
+//     k_sleep(K_MSEC(25));
+//     epd_sleep();
+//     k_sleep(K_MSEC(25));
+//     epd_init();
 
     epd_init();
     epd_fill_color(0x2);
