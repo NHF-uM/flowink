@@ -7,10 +7,10 @@ project(flowink)
 
 FILE(GLOB app_sources 
     main.c
-    driver/src/*.c)
+    driver/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-# 添加workq_common.h所在头文件目录
+# 添加头文件目录
 target_include_directories(app PRIVATE
-    ${CMAKE_SOURCE_DIR}/../flowink/driver/inc
+    ${CMAKE_SOURCE_DIR}/../flowink/driver
 )
