@@ -89,3 +89,8 @@
 &dma {
 	status = "okay";
 };
+
+&rtc_timer {
+	status = "okay";
+	wakeup-source;
+};

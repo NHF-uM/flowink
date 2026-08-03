@@ -6,27 +6,17 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/device.h>
 #include "pwr_manage.h"
 #include "rgb_strip.h"
-
+#include <esp_sleep.h>
 int main(void)
 {
-    k_sleep(K_SECONDS(30));
-    pwr_set_sleep_timer_wakeup(60);
+    pwr_get_wakeup_cause();
 
-    uint8_t color = BLUE;
-    if (pwr_get_wakeup_cause() == WAKEUP_TIMER) 
-    {
-        color = RED;
-    } 
-    else 
-    {
-        color = GREEN;
-    }
+    k_sleep(K_SECONDS(30));
+    esp_sleep_enable_timer_wakeup(30 * 1000 * 1000);
     pwr_enter_sleep();
+
     while (1) {
-        rgb_strip_on(color);
-        k_sleep(K_MSEC(1000));
-        rgb_strip_off();
-        k_sleep(K_MSEC(1000));
+
     }
     return 0;
 }

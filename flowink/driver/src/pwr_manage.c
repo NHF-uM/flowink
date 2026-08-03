@@ -1,5 +1,5 @@
-// #include <zephyr/logging/log.h>
-// LOG_MODULE_REGISTER(pwr_m);
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(pwr_m);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -21,17 +21,17 @@ wakeup_source_t pwr_get_wakeup_cause(void)
 
     if (cause & BIT(ESP_SLEEP_WAKEUP_EXT1))
     {
-        // LOG_INF("CPU woken up by RTC_GPIO");
+        LOG_INF("CPU woken up by RTC_GPIO");
         return WAKEUP_IO;
     }
     else if (cause & BIT(ESP_SLEEP_WAKEUP_TIMER))
     {
-        // LOG_INF("CPU woken up by Timer");
+        LOG_INF("CPU woken up by Timer");
         return WAKEUP_TIMER;
     }
     else
     {
-        // LOG_INF("CPU woken up by unknown wakeup source:%d", cause);
+        LOG_INF("CPU woken up by unknown wakeup source:%d", cause);
     }
 
     return WAKEUP_UNKNOWN;
@@ -43,7 +43,7 @@ void pwr_set_sleep_timer_wakeup(int time_s)
 {
     if (time_s < 300 || time_s > (3600 * 24))
     {
-        // LOG_ERR("invalid wakeup time %ds", time_s);
+        LOG_ERR("invalid wakeup time %ds", time_s);
         time_s = CONFIG_WAKEUP_TIME_SEC;
     }
 
@@ -57,19 +57,19 @@ void pwr_enter_sleep(void)
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入 */
     if (!gpio_is_ready_dt(&wakeup_io_spec))
     {
-        // LOG_ERR("pwr_wakeup pin not ready \n");
+        LOG_ERR("pwr_wakeup pin not ready \n");
         return;
     }
 
     if (gpio_pin_configure_dt(&wakeup_io_spec, GPIO_INPUT) != 0)
     {
-        // LOG_ERR("failed to configure pwr_wakeup pin \n");
+        LOG_ERR("failed to configure pwr_wakeup pin \n");
         return;
     }
 
     if (!pm_device_wakeup_enable(wakeup_io_spec.port, true))
     {
-        // LOG_ERR("failed to enable wakeup pin \n");
+        LOG_ERR("failed to enable wakeup pin \n");
         return;
     }
 
