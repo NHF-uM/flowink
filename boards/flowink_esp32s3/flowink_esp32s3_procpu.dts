@@ -78,3 +78,19 @@
 &dma {
 	status = "okay";
 };
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	
+	/* 9 is MOSI, 10 is SCLK，11 is CS（高电平为数据）, 12 is DC, 13 is RST, 14 is BUSY */
+	epd: epd@0 {	
+		reg = <0>;
+	};
+};
+
