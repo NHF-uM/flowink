@@ -20,8 +20,7 @@ LOG_MODULE_REGISTER(main);
 #define EPD_7IN3E_WIDTH     DT_PROP(EPD_NODE, width)
 #define EPD_7IN3E_HEIGHT    DT_PROP(EPD_NODE, height)
 
-const struct device *epd_spi = DEVICE_DT_GET(DT_NODELABEL(spi2));
-// const struct spi_dt_spec epd_spi = SPI_DT_SPEC_GET(EPD_NODE, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+const struct spi_dt_spec epd_spi = SPI_DT_SPEC_GET(EPD_NODE, SPI_OP_MODE_MASTER | SPI_WORD_SET(8));
 const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
 const struct gpio_dt_spec epd_gpio_busy = GPIO_DT_SPEC_GET(EPD_NODE, busy_gpios);
@@ -73,7 +72,7 @@ static void epd_send_command(uint8_t cmd)
         .buffers = &(struct spi_buf){.buf = &cmd, .len = 1},
         .count = 1,
     };
-    spi_write(epd_spi, &epd_spi_cfg, &tx_buf);
+    spi_write_dt(&epd_spi, &tx_buf);
 }
 
 static void epd_send_data(uint8_t data)
@@ -83,7 +82,7 @@ static void epd_send_data(uint8_t data)
         .buffers = &(struct spi_buf){.buf = &data, .len = 1},
         .count = 1,
     };
-    spi_write(epd_spi, &epd_spi_cfg, &tx_buf);
+    spi_write_dt(&epd_spi, &tx_buf);
 }
 
 void epd_init(void)

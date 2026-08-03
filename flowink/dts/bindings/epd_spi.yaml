@@ -4,10 +4,9 @@ description: |
 
 compatible: "nhf-um,epd-spi"
 
-properties:
+include: spi-device.yaml
 
-  reg:
-    type: int
+properties:
 
   dc-gpios:
     type: phandle-array
