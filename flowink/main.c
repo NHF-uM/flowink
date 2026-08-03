@@ -22,11 +22,10 @@ const struct device *epd_port = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 // const struct device *epd_spi = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(epd)));
 const struct device *epd_spi = DEVICE_DT_GET(DT_NODELABEL(spi2));
 
-// #define EPD_SPI_FLASS (SPI_OP_MODE_MASTER | )
-// const struct spi_dt_spec epd_spi_spec = SPI_DT_SPEC_GET(DT_NODELABEL(epd), 0);
 
+// 问题：90us的cs拉低，clk有效只占了7us左右
 const struct spi_config epd_spi_cfg = {
-    .frequency = 1125000,
+    .frequency = 10000000,
     .cs = {
         .cs_is_gpio = true,
         .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(epd)),
@@ -43,11 +42,11 @@ const struct spi_config epd_spi_cfg = {
 static void epd_reset(void)
 {
     PIN_SET(RST_PIN);
-    k_sleep(K_MSEC(20));
+    k_sleep(K_MSEC(50));
     PIN_CLR(RST_PIN);
-    k_sleep(K_MSEC(2));
-    PIN_SET(RST_PIN);
     k_sleep(K_MSEC(20));
+    PIN_SET(RST_PIN);
+    k_sleep(K_MSEC(50));
 }
 
 /**
@@ -59,7 +58,7 @@ static void epd_wait_idle(void)
     LOG_INF("e-Paper busy H\r\n");
     while (!gpio_pin_get(epd_port, BUSY_PIN))
     {
-        k_sleep(K_MSEC(1));
+        k_sleep(K_MSEC(5));
     }
     LOG_INF("e-Paper busy H release\r\n");
 }
@@ -225,7 +224,7 @@ void epd_fill_image(uint8_t *Image)
     }
     epd_refresh();
 }
-
+uint8_t color = 0;
 int main(void)
 {
     gpio_pin_configure(epd_port, DC_PIN, GPIO_OUTPUT_INACTIVE);
@@ -234,17 +233,39 @@ int main(void)
 
     rgb_strip_on(BLUE);
 
+    // 先复位再按逻辑分析仪，不然逻辑分析仪会跑飞
+    // k_sleep(K_MSEC(5000));
+    // epd_reset();
+    // k_sleep(K_MSEC(50));
+    // epd_send_command(0x5a);
+    // k_sleep(K_MSEC(50));
+    // epd_send_data(0x75);
+    // k_sleep(K_MSEC(50));
+
+    // 好像等不到BUSY拉高，是不是配置有问题
+    epd_wait_idle();
+    // k_sleep(K_MSEC(50));
+    // epd_sleep();
+
     while (1)
     {
-        epd_reset();
-        k_sleep(K_MSEC(50));
-        epd_send_command(0x5a);
-        k_sleep(K_MSEC(50));
-        epd_send_data(0x75);
-        k_sleep(K_MSEC(50));
-        epd_wait_idle();
-        k_sleep(K_MSEC(50));
-        epd_sleep();
+        rgb_strip_on(color);
+        k_sleep(K_MSEC(1000));
+        rgb_strip_off();
+        k_sleep(K_MSEC(1000));
     }
+    
     return 0;
 }
+
+static void button_input_cb(struct input_event *evt, void *user_data)
+{
+    if (evt->sync == 0)
+    {
+        return;
+    }
+
+    color = (color + 1) % 3;
+}
+
+INPUT_CALLBACK_DEFINE(NULL, button_input_cb, NULL);
