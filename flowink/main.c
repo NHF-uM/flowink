@@ -7,8 +7,9 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/dhcpv4_server.h>
 
-#define NET_EVENT_WIFI_MASK \
-    (NET_EVENT_WIFI_AP_ENABLE_RESULT | NET_EVENT_WIFI_AP_DISABLE_RESULT)
+#define NET_EVENT_WIFI_MASK                                               \
+    (NET_EVENT_WIFI_AP_ENABLE_RESULT | NET_EVENT_WIFI_AP_DISABLE_RESULT | \
+     NET_EVENT_WIFI_AP_STA_CONNECTED | NET_EVENT_WIFI_AP_STA_DISCONNECTED)
 
 static struct net_if *ap_iface;
 static struct net_mgmt_event_callback net_event_cb;
@@ -28,6 +29,22 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
     case NET_EVENT_WIFI_AP_DISABLE_RESULT:
     {
         LOG_INF("AP Mode is disabled.");
+        break;
+    }
+    case NET_EVENT_WIFI_AP_STA_CONNECTED:
+    {
+        struct wifi_ap_sta_info *sta_info = (struct wifi_ap_sta_info *)cb->info;
+
+        LOG_INF("station: " MACSTR " joined ", sta_info->mac[0], sta_info->mac[1],
+                sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5]);
+        break;
+    }
+    case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
+    {
+        struct wifi_ap_sta_info *sta_info = (struct wifi_ap_sta_info *)cb->info;
+
+        LOG_INF("station: " MACSTR " leave ", sta_info->mac[0], sta_info->mac[1],
+                sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5]);
         break;
     }
     default:
