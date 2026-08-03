@@ -25,6 +25,13 @@ const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
 const struct gpio_dt_spec epd_gpio_busy = GPIO_DT_SPEC_GET(EPD_NODE, busy_gpios);
 
+#define EPD_7IN3E_BLACK   0x0   
+#define EPD_7IN3E_WHITE   0x1   
+#define EPD_7IN3E_YELLOW  0x2   
+#define EPD_7IN3E_RED     0x3   
+#define EPD_7IN3E_BLUE    0x5   
+#define EPD_7IN3E_GREEN   0x6   
+
 /**
  * @brief 复位屏幕驱动芯片
  * @param  无
@@ -252,7 +259,7 @@ int main(void)
 //     epd_init();
 
     epd_init();
-    epd_fill_color(0x2);
+    epd_fill_color(0x1);
     k_sleep(K_MSEC(10000));
     epd_fill_color(0x1);
     epd_sleep();
