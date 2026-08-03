@@ -7,6 +7,7 @@ LOG_MODULE_REGISTER(main);
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/input/input.h>
 #include <rgb_strip.h>
 
 #define DC_PIN 12
@@ -19,7 +20,6 @@ LOG_MODULE_REGISTER(main);
 #define EPD_7IN3E_HEIGHT 480
 
 const struct device *epd_port = DEVICE_DT_GET(DT_NODELABEL(gpio0));
-// const struct device *epd_spi = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(epd)));
 const struct device *epd_spi = DEVICE_DT_GET(DT_NODELABEL(spi2));
 
 
@@ -229,23 +229,11 @@ int main(void)
 {
     gpio_pin_configure(epd_port, DC_PIN, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure(epd_port, RST_PIN, GPIO_OUTPUT_INACTIVE);
-    gpio_pin_configure(epd_port, BUSY_PIN, GPIO_INPUT);
+    gpio_pin_configure(epd_port, BUSY_PIN, GPIO_INPUT | GPIO_PULL_UP);
 
     rgb_strip_on(BLUE);
 
     // 先复位再按逻辑分析仪，不然逻辑分析仪会跑飞
-    // k_sleep(K_MSEC(5000));
-    // epd_reset();
-    // k_sleep(K_MSEC(50));
-    // epd_send_command(0x5a);
-    // k_sleep(K_MSEC(50));
-    // epd_send_data(0x75);
-    // k_sleep(K_MSEC(50));
-
-    // 好像等不到BUSY拉高，是不是配置有问题
-    epd_wait_idle();
-    // k_sleep(K_MSEC(50));
-    // epd_sleep();
 
     while (1)
     {
