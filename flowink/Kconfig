@@ -70,4 +70,18 @@ config WIFI_SAMPLE_AP_NETMASK
 
 endmenu
 
+menu "HTTP Configuration"
+
+config NET_SAMPLE_HTTP_SERVICE
+	bool "Enable http service"
+	default y
+
+config NET_HTTP_SERVER_PORT
+	int "Port number for http service"
+	default 80
+	depends on NET_SAMPLE_HTTP_SERVICE
+
+endmenu
+
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

@@ -138,8 +138,33 @@ int main(void)
         LOG_ERR("NET_REQUEST_WIFI_AP_ENABLE failed, err: %d", ret);
     }
 
+
+
+
+
+
+
+
+    http_server_start();
+
     while (1)
     {
     }
     return 0;
 }
+
+static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
+
+/*
+6. _detail 用户私有自定义数据
+任意指针，会挂载在 http_service 结构体里。
+业务场景：
+传入设备配置结构体、状态指针；
+在路由回调函数中通过 service->detail 拿到业务上下文，不用全局变量。
+7. _res_fallback 兜底资源（404 页面）
+当访问的 URL 没有匹配任何已注册路由时，就返回这个资源。
+一般用 HTTP_RESOURCE_STATIC() 定义一个返回 404 html 的静态资源。
+*/
+
+HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
+		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
