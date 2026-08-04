@@ -15,6 +15,7 @@
 #define EPD_7IN3E_HEIGHT    DT_PROP(EPD_NODE, height)
 #define EPD_SIZE_BYTE       ((EPD_7IN3E_WIDTH % 2 == 0 ? (EPD_7IN3E_WIDTH / 2) : (EPD_7IN3E_WIDTH / 2 + 1)) * EPD_7IN3E_HEIGHT)
 
+void epd_reset(void);
 void epd_init(void);
 void epd_fill_color(uint8_t color);
 void epd_fill_image(uint8_t *Image);

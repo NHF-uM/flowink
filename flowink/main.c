@@ -15,17 +15,13 @@ uint8_t color = 0;
 int main(void)
 {
     epd_init();
-    epd_fill_color(EPD_COLOR_BLUE);
     epd_sleep();
     
     k_sleep(K_MINUTES(3));
+
+    epd_reset();
     epd_fill_color(EPD_COLOR_WHITE);
     epd_sleep();
-    // extern void epd_reset(void);
-    // epd_reset();
-    // epd_fill_color(EPD_COLOR_WHITE);
-
-    
 
     while (1)
     {

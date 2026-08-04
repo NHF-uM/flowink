@@ -34,20 +34,6 @@ static void epd_lowlevel_init(void)
 }
 
 /**
- * @brief 复位屏幕驱动芯片
- * @param  无
- */
-static void epd_reset(void)
-{
-    gpio_pin_set_dt(&epd_gpio_rst, 1);
-    k_sleep(K_MSEC(50));
-    gpio_pin_set_dt(&epd_gpio_rst, 0);
-    k_sleep(K_MSEC(20));
-    gpio_pin_set_dt(&epd_gpio_rst, 1);
-    k_sleep(K_MSEC(50));
-}
-
-/**
  * @brief 等待BUSY引脚拉高
  * @param  无
  */
@@ -104,6 +90,20 @@ static void epd_refresh(void)
     epd_send_command(0x02); // POWER_OFF
     epd_send_data(0X00);
     epd_wait_idle();
+}
+
+/**
+ * @brief 复位屏幕驱动芯片
+ * @param  无
+ */
+void epd_reset(void)
+{
+    gpio_pin_set_dt(&epd_gpio_rst, 1);
+    k_sleep(K_MSEC(50));
+    gpio_pin_set_dt(&epd_gpio_rst, 0);
+    k_sleep(K_MSEC(20));
+    gpio_pin_set_dt(&epd_gpio_rst, 1);
+    k_sleep(K_MSEC(50));
 }
 
 void epd_init(void)
@@ -215,7 +215,7 @@ void epd_fill_image(uint8_t *Image)
     epd_refresh();
 }
 
-/// @brief 进入休眠模式，无需调用其他唤醒函数
+/// @brief 进入休眠模式，再次唤醒需要调用 epd_reset()
 /// @param  无
 void epd_sleep(void)
 {
