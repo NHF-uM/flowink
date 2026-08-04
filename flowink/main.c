@@ -7,6 +7,8 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/dhcpv4_server.h>
 
+#define MACSTR "%02X:%02X:%02X:%02X:%02X:%02X"
+
 #define NET_EVENT_WIFI_MASK                                               \
     (NET_EVENT_WIFI_AP_ENABLE_RESULT | NET_EVENT_WIFI_AP_DISABLE_RESULT | \
      NET_EVENT_WIFI_AP_STA_CONNECTED | NET_EVENT_WIFI_AP_STA_DISCONNECTED)
@@ -145,7 +147,7 @@ int main(void)
 
 
 
-    http_server_start();
+    // http_server_start();
 
     while (1)
     {
@@ -153,7 +155,7 @@ int main(void)
     return 0;
 }
 
-static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
+// static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
 
 /*
 6. _detail 用户私有自定义数据
@@ -166,5 +168,5 @@ static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
 一般用 HTTP_RESOURCE_STATIC() 定义一个返回 404 html 的静态资源。
 */
 
-HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
-		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
+// HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
+// 		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
