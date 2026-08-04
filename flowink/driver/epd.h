@@ -11,7 +11,11 @@
 #define EPD_COLOR_BLUE    0x5   
 #define EPD_COLOR_GREEN   0x6   
 
-void epd_wakeup_or_init(void);
+#define EPD_7IN3E_WIDTH     DT_PROP(EPD_NODE, width)
+#define EPD_7IN3E_HEIGHT    DT_PROP(EPD_NODE, height)
+#define EPD_SIZE_BYTE       ((EPD_7IN3E_WIDTH % 2 == 0 ? (EPD_7IN3E_WIDTH / 2) : (EPD_7IN3E_WIDTH / 2 + 1)) * EPD_7IN3E_HEIGHT)
+
+void epd_init(void);
 void epd_fill_color(uint8_t color);
 void epd_fill_image(uint8_t *Image);
 void epd_sleep(void);

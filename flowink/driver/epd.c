@@ -1,26 +1,43 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include "epd.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(epd, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define EPD_NODE            DT_NODELABEL(epd)
-#define EPD_7IN3E_WIDTH     DT_PROP(EPD_NODE, width)
-#define EPD_7IN3E_HEIGHT    DT_PROP(EPD_NODE, height)
 
 const struct spi_dt_spec epd_spi = SPI_DT_SPEC_GET(EPD_NODE, SPI_OP_MODE_MASTER | SPI_WORD_SET(8));
 const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
 const struct gpio_dt_spec epd_gpio_busy = GPIO_DT_SPEC_GET(EPD_NODE, busy_gpios);
 
+static void epd_lowlevel_init(void)
+{
+    gpio_pin_configure_dt(&epd_gpio_dc, GPIO_OUTPUT_LOW);
+    gpio_pin_configure_dt(&epd_gpio_rst, GPIO_OUTPUT_HIGH);
+    gpio_pin_configure_dt(&epd_gpio_busy, GPIO_INPUT);
+
+    if (!gpio_is_ready_dt(&epd_gpio_dc) || !gpio_is_ready_dt(&epd_gpio_rst) || !gpio_is_ready_dt(&epd_gpio_busy))
+    {
+        LOG_ERR("GPIO device not ready");
+        return;
+    }
+
+    if (!spi_is_ready_dt(&epd_spi))
+    {
+        LOG_ERR("SPI device not ready");
+        return;
+    }
+}
+
 /**
  * @brief 复位屏幕驱动芯片
  * @param  无
  */
-void epd_reset(void)
+static void epd_reset(void)
 {
     gpio_pin_set_dt(&epd_gpio_rst, 1);
     k_sleep(K_MSEC(50));
@@ -89,27 +106,9 @@ static void epd_refresh(void)
     epd_wait_idle();
 }
 
-/// @brief 唤醒屏幕驱动芯片，初始化屏幕
-/// @param  
-void epd_wakeup_or_init(void)
+void epd_init(void)
 {
-    gpio_pin_configure_dt(&epd_gpio_dc, GPIO_OUTPUT_LOW);
-    gpio_pin_configure_dt(&epd_gpio_rst, GPIO_OUTPUT_HIGH);
-    gpio_pin_configure_dt(&epd_gpio_busy, GPIO_INPUT);
-
-    if (!gpio_is_ready_dt(&epd_gpio_dc) || !gpio_is_ready_dt(&epd_gpio_rst) || !gpio_is_ready_dt(&epd_gpio_busy))
-    {
-        LOG_ERR("GPIO device not ready");
-        return 0;
-    }
-
-    if (!spi_is_ready_dt(&epd_spi))
-    {
-        LOG_ERR("SPI device not ready");
-        return 0;
-    }
-
-
+    epd_lowlevel_init();
 
     epd_reset();
     epd_wait_idle();
@@ -183,18 +182,15 @@ void epd_wakeup_or_init(void)
 
 /**
  * @brief 发送单色像素数据，调用后会等待 busy 线释放
- * @param color 
+ * @param color
  */
 void epd_fill_color(uint8_t color)
 {
-    uint16_t Width, Height;
-    Width = (EPD_7IN3E_WIDTH % 2 == 0) ? (EPD_7IN3E_WIDTH / 2) : (EPD_7IN3E_WIDTH / 2 + 1);
-    Height = EPD_7IN3E_HEIGHT;
-
     epd_send_command(0x10);
-    for (uint16_t j = 0; j < Height; j++)
+
+    for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
     {
-        for (uint16_t i = 0; i < Width; i++)
+        for (uint16_t i = 0; i < EPD_7IN3E_WIDTH; i++)
         {
             epd_send_data((color << 4) | color);
         }
@@ -204,25 +200,22 @@ void epd_fill_color(uint8_t color)
 }
 
 /// @brief 发送 Image 像素数据，调用后会等待 busy 线释放
-/// @param Image 
+/// @param Image
 void epd_fill_image(uint8_t *Image)
 {
-    uint16_t Width, Height;
-    Width = (EPD_7IN3E_WIDTH % 2 == 0) ? (EPD_7IN3E_WIDTH / 2) : (EPD_7IN3E_WIDTH / 2 + 1);
-    Height = EPD_7IN3E_HEIGHT;
-
     epd_send_command(0x10);
-    for (uint16_t j = 0; j < Height; j++)
+
+    for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
     {
-        for (uint16_t i = 0; i < Width; i++)
+        for (uint16_t i = 0; i < EPD_7IN3E_WIDTH; i++)
         {
-            epd_send_data(Image[i + j * Width]);
+            epd_send_data(Image[i + j * EPD_7IN3E_WIDTH]);
         }
     }
     epd_refresh();
 }
 
-/// @brief 进入休眠模式，如需退出需要复位 ic 芯片
+/// @brief 进入休眠模式，无需调用其他唤醒函数
 /// @param  无
 void epd_sleep(void)
 {
