@@ -83,3 +83,7 @@
 &dma {
 	status = "okay";
 };
+
+&wifi {
+	status = "okay";
+};
