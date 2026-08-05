@@ -41,6 +41,8 @@ static void pwr_update_wakeup_cause(void)
 /// @param  
 void pwr_init(void)
 {
+    pwr_update_wakeup_cause();
+    
     if (!gpio_is_ready_dt(&wakeup_io_spec))
     {
         LOG_ERR("pwr_wakeup pin not ready \n");
@@ -53,9 +55,10 @@ void pwr_init(void)
     // }
 
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入和中断触发 */
-    if (gpio_pin_configure_dt(&wakeup_io_spec, GPIO_INPUT) || gpio_pin_interrupt_configure_dt(&wakeup_io_spec, GPIO_INT_EDGE_TO_INACTIVE);)
+    int ret = gpio_pin_configure_dt(&wakeup_io_spec, GPIO_INPUT);
+    if (ret != 0)
     {
-        LOG_ERR("failed to configure pwr_wakeup pin \n");
+        LOG_ERR("fail to configure pwr_wakeup pin: %d", ret);
         return;
     }
 
@@ -64,11 +67,9 @@ void pwr_init(void)
         LOG_ERR("failed to enable wakeup pin \n");
         return;
     }
-
-    pwr_update_wakeup_cause();
 }
 
-inline wakeup_source_t pwr_get_wakeup_cause(void)
+wakeup_source_t pwr_get_wakeup_cause(void)
 {
     return wakeup_cause;
 }
@@ -88,7 +89,7 @@ void pwr_set_sleep_timer_wakeup(int time_s)
 
 /// @brief 进入深度休眠，每次唤醒后都需要重新配置唤醒源
 /// @param  无
-inline void pwr_enter_sleep(void)
+void pwr_enter_sleep(void)
 {
     sys_poweroff();
 }

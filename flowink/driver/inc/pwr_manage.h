@@ -9,8 +9,8 @@ typedef enum {
 } wakeup_source_t;
 
 void pwr_init(void);
-inline wakeup_source_t pwr_get_wakeup_cause(void);
+wakeup_source_t pwr_get_wakeup_cause(void);
 void pwr_set_sleep_timer_wakeup(int time_s);
-inline void pwr_enter_sleep(void);
+void pwr_enter_sleep(void);
 
 #endif
