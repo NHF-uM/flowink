@@ -8,8 +8,9 @@ typedef enum {
     WAKEUP_UNKNOWN = 0xff
 } wakeup_source_t;
 
-wakeup_source_t pwr_get_wakeup_cause(void);
+void pwr_init(void);
+inline wakeup_source_t pwr_get_wakeup_cause(void);
 void pwr_set_sleep_timer_wakeup(int time_s);
-void pwr_enter_sleep(void);
+inline void pwr_enter_sleep(void);
 
 #endif

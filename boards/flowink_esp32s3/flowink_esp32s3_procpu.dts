@@ -51,6 +51,26 @@
 			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
+
+	/* 从 rtc-slow-ram 分了256字节出来，用 remained-ram 组件管理 */
+	memory@50001f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x50001f00 0x100>;
+		zephyr,memory-region = "RTC_SLOW_RAM_RETAINED_MEM";
+		status = "okay";
+
+		retained_mem0: retaine_mem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+};
+
+&rtc_slow_ram {
+	/* Shrink rtc_slow_ram size to avoid overlap with retained memory region:
+	 * 8KB - 256 = 0x1f00
+	 */
+	reg = <0x50000000 0x1f00>;
 };
 
 &gpio0 {
