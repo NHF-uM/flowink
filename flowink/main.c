@@ -1,7 +1,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
-#include "pwr_manage.h"
+// #include "pwr_manage.h"
+
+LOG_MODULE_REGISTER(main);
 
 #define LED_PWR_NODE DT_NODELABEL(led_pwr)
 #define LED_MODE_NODE DT_NODELABEL(led_mode)
@@ -9,8 +12,6 @@ static const struct gpio_dt_spec led_pwr = GPIO_DT_SPEC_GET(LED_PWR_NODE, gpios)
 static const struct gpio_dt_spec led_mode = GPIO_DT_SPEC_GET(LED_MODE_NODE, gpios);
 
 static void led_timer_callback(struct k_timer *timer);
-static K_TIMER_DEFINE(timer_pwr, led_timer_callback, NULL);
-static K_TIMER_DEFINE(timer_mode, led_timer_callback, NULL);
 
 struct led_ctx
 {
@@ -21,13 +22,11 @@ struct led_ctx
 
 static struct led_ctx ctx_pwr = {
 	.gpio = &led_pwr,
-	.timer = &timer_pwr,
 	.blinky_en = false,
 };
 
 static struct led_ctx ctx_mode = {
 	.gpio = &led_mode,
-	.timer = &timer_mode,
 	.blinky_en = false,
 };
 
@@ -89,7 +88,7 @@ void led_set(struct led_ctx *ctx, bool enable, k_timeout_t period)
 int main(void)
 {
 	int ret;
-	pwr_init();
+	// pwr_init();
 
 	if (!gpio_is_ready_dt(&led_pwr) || !gpio_is_ready_dt(&led_mode))
 	{
@@ -109,6 +108,9 @@ int main(void)
 		printk("Failed to configure mode led: %d", ret);
 		return -1;
 	}
+
+	k_timer_init(&ctx_pwr.timer, led_timer_callback, NULL);
+	k_timer_init(&ctx_mode.timer, led_timer_callback, NULL);
 
 	led_set(&ctx_pwr, true, K_NO_WAIT);
 	led_set(&ctx_mode, true, K_MSEC(500));

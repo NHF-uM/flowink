@@ -18,7 +18,6 @@
 
 	aliases {
 		uart-0 = &uart0;
-		sw0 = &button0;
 		led-strip = &led_strip;
 	};
 
