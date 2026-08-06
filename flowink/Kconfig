@@ -1,6 +1,14 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+mainmenu "FlowInk Configuration"
+
+config BTN_LONG_PRESSED_INTERVAL
+	int "Interval for Btn's Long-Pressing"
+	default 2000
+	help
+	  interval in ms
+
 menu "WS2812 Sample Configuration"
 
 config SAMPLE_LED_UPDATE_DELAY
