@@ -46,6 +46,7 @@
 		};
 	};
 
+  /* 为什么采用 &wifi{status = "okay";} 的方式会报错？？ */
 	wifi_ap: wifi_ap {
 		compatible = "espressif,esp32-wifi";
 		status = "okay";
@@ -81,9 +82,5 @@
 };
 
 &dma {
-	status = "okay";
-};
-
-&wifi {
 	status = "okay";
 };
