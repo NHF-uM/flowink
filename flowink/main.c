@@ -153,23 +153,10 @@ void rgb_strip_thread_entry(void)
 K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL,
 				7, 0, 0);
 
-// #include <zephyr/net/http/server.h>
-// #include <zephyr/net/http/service.h>
-// #include <zephyr/net/net_ip.h>
-// #include <zephyr/net/socket.h>
-// #include <zephyr/net/net_config.h>
-// #include <zephyr/sys/util.h>
-// #include <zephyr/data/json.h>
-// #include <zephyr/sys/util_macro.h>
-// #include <zephyr/net/net_config.h>
-
-// #include <zephyr/net/tls_credentials.h>
-
 #include <stdio.h>
 #include <inttypes.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
@@ -196,12 +183,14 @@ static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.static_data_len = sizeof(index_html_gz),
 };
 
-static const uint16_t http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
-HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
+#if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
+static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
+HTTP_SERVICE_DEFINE(test_http_service, NULL, &test_http_service_port,
 		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
 
-HTTP_RESOURCE_DEFINE(index_html_gz_resource, http_service, "/",
+HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
 		     &index_html_gz_resource_detail);
+#endif /* CONFIG_NET_SAMPLE_HTTP_SERVICE */
 
 int main(void)
 {

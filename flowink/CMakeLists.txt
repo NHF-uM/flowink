@@ -3,20 +3,47 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+
+
+
+
+find_package(Python REQUIRED COMPONENTS Interpreter)
+
 project(flowink)
+
+
+option(INCLUDE_HTML_CONTENT "Include the HTML content" ON)
+
+
+
+
+
+
+
 
 FILE(GLOB app_sources 
     main.c
     driver/src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-# 添加workq_common.h所在头文件目录
 target_include_directories(app PRIVATE
     ${CMAKE_SOURCE_DIR}/../flowink/driver/inc
 )
 
 
 
+
+
+
+
+target_link_libraries(app PRIVATE zephyr_interface zephyr)
+
+zephyr_linker_sources(SECTIONS sections-rom.ld)
+zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
+  NAME http_resource_desc_test_http_service
+  KVMA RAM_REGION GROUP RODATA_REGION
+)
 
 # 固定生成目录，Zephyr 内置头文件路径
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
@@ -39,11 +66,3 @@ generate_inc_file_for_target(app
 )
 endforeach()
 
-
-zephyr_linker_sources(SECTIONS sections-rom.ld)
-zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
-  NAME http_resource_desc_http_service
-  KVMA RAM_REGION GROUP RODATA_REGION
-)
-
-target_link_libraries(app PRIVATE zephyr_interface zephyr)

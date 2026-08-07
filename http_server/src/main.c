@@ -30,8 +30,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_server_sample, LOG_LEVEL_DBG);
 
-#define CONFIG_NET_SAMPLE_HTTP_SERVICE 1
-
 struct led_command {
 	int led_num;
 	bool led_state;
