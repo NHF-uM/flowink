@@ -139,21 +139,6 @@ static int enable_ap_mode(void)
 	return ret;
 }
 
-int main(void)
-{
-	/* 等待ic初始化 */
-	k_sleep(K_SECONDS(5));
-
-	net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
-	net_mgmt_add_event_callback(&net_mgmt_cb);
-
-	ap_iface = net_if_get_wifi_sap();
-
-	enable_ap_mode();
-
-	// http_server_start();
-	return 0;
-}
 void rgb_strip_thread_entry(void)
 {
 	while (1)
@@ -168,13 +153,35 @@ void rgb_strip_thread_entry(void)
 K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL,
 				7, 0, 0);
 
+// #include <zephyr/net/http/server.h>
+// #include <zephyr/net/http/service.h>
+// #include <zephyr/net/net_ip.h>
+// #include <zephyr/net/socket.h>
+// #include <zephyr/net/net_config.h>
+// #include <zephyr/sys/util.h>
+// #include <zephyr/data/json.h>
+// #include <zephyr/sys/util_macro.h>
+// #include <zephyr/net/net_config.h>
+
+// #include <zephyr/net/tls_credentials.h>
+
+#include <stdio.h>
+#include <inttypes.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/led.h>
+#include <zephyr/data/json.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/net/net_config.h>
 
-static uint8_t *index_html_gz = {
+static uint8_t index_html_gz[] = {
 #include "index.html.gz.inc"
 };
 
@@ -189,12 +196,28 @@ static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.static_data_len = sizeof(index_html_gz),
 };
 
-static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
+static const uint16_t http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
 HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
 		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
-CONFIG_HTTP_SERVER_MAX_CLIENTS在menu中有定义吗，具体是干什么的
+
 HTTP_RESOURCE_DEFINE(index_html_gz_resource, http_service, "/",
 		     &index_html_gz_resource_detail);
+
+int main(void)
+{
+	/* 等待ic初始化 */
+	k_sleep(K_SECONDS(5));
+
+	net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
+	net_mgmt_add_event_callback(&net_mgmt_cb);
+
+	ap_iface = net_if_get_wifi_sap();
+
+	enable_ap_mode();
+
+	http_server_start();
+	return 0;
+}
 
 /*
 6. _detail 用户私有自定义数据
@@ -206,4 +229,3 @@ HTTP_RESOURCE_DEFINE(index_html_gz_resource, http_service, "/",
 当访问的 URL 没有匹配任何已注册路由时，就返回这个资源。
 一般用 HTTP_RESOURCE_STATIC() 定义一个返回 404 html 的静态资源。
 */
-

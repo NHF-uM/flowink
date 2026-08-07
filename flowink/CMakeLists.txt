@@ -40,10 +40,10 @@ generate_inc_file_for_target(app
 endforeach()
 
 
-# zephyr_linker_sources(SECTIONS sections-rom.ld)
-# zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
-#   NAME http_resource_desc_test_http_service
-#   KVMA RAM_REGION GROUP RODATA_REGION
-# )
+zephyr_linker_sources(SECTIONS sections-rom.ld)
+zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
+  NAME http_resource_desc_http_service
+  KVMA RAM_REGION GROUP RODATA_REGION
+)
 
-# target_link_libraries(app PRIVATE zephyr_interface zephyr)
+target_link_libraries(app PRIVATE zephyr_interface zephyr)
