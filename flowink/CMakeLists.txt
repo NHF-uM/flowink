@@ -41,7 +41,7 @@ target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
 zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
-  NAME http_resource_desc_test_http_service
+  NAME http_resource_desc_http_service
   KVMA RAM_REGION GROUP RODATA_REGION
 )
 
@@ -60,7 +60,7 @@ foreach(file ${WEB_FILES})
 
 # 读取一个二进制文件，压缩后转为 C 静态数组，生成 .inc 文件：固件；源文件路径；输出路径；转换前先压缩为gzip
 generate_inc_file_for_target(app
-    html/${file}
+    web/${file}
     ${gen_dir}/${file}.gz.inc
     --gzip                
 )

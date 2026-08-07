@@ -163,7 +163,6 @@ K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL
 #include <zephyr/net/socket.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/led.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/net/net_config.h>
@@ -183,14 +182,12 @@ static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.static_data_len = sizeof(index_html_gz),
 };
 
-#if defined(CONFIG_NET_SAMPLE_HTTP_SERVICE)
-static uint16_t test_http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
-HTTP_SERVICE_DEFINE(test_http_service, NULL, &test_http_service_port,
+static uint16_t http_service_port = CONFIG_NET_SAMPLE_HTTP_SERVER_SERVICE_PORT;
+HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
 		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
 
-HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
+HTTP_RESOURCE_DEFINE(index_html_gz_resource, http_service, "/",
 		     &index_html_gz_resource_detail);
-#endif /* CONFIG_NET_SAMPLE_HTTP_SERVICE */
 
 int main(void)
 {
