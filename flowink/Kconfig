@@ -59,7 +59,7 @@ config NET_SAMPLE_HTTP_SERVICE
 	bool "Enable http service"
 	default y
 
-config NET_HTTP_SERVER_PORT
+config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
 	int "Port number for http service"
 	default 80
 	depends on NET_SAMPLE_HTTP_SERVICE

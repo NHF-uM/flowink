@@ -168,7 +168,33 @@ void rgb_strip_thread_entry(void)
 K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL,
 				7, 0, 0);
 
-// static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
+#include <zephyr/net/http/server.h>
+#include <zephyr/net/http/service.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_config.h>
+
+static uint8_t *index_html_gz = {
+#include "index.html.gz.inc"
+};
+
+static struct http_resource_detail_static index_html_gz_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+			.content_encoding = "gzip",
+			.content_type = "text/html",
+		},
+	.static_data = index_html_gz,
+	.static_data_len = sizeof(index_html_gz),
+};
+
+static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
+HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
+		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
+CONFIG_HTTP_SERVER_MAX_CLIENTS在menu中有定义吗，具体是干什么的
+HTTP_RESOURCE_DEFINE(index_html_gz_resource, http_service, "/",
+		     &index_html_gz_resource_detail);
 
 /*
 6. _detail 用户私有自定义数据
@@ -180,30 +206,4 @@ K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL
 当访问的 URL 没有匹配任何已注册路由时，就返回这个资源。
 一般用 HTTP_RESOURCE_STATIC() 定义一个返回 404 html 的静态资源。
 */
-
-// HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
-// 		    CONFIG_HTTP_SERVER_MAX_CLIENTS, 10, NULL, NULL, NULL);
-
-// #include <zephyr/net/http/server.h>
-// #include <zephyr/net/http/service.h>
-// #include <zephyr/net/net_ip.h>
-// #include <zephyr/net/socket.h>
-// #include <zephyr/net/net_config.h>
-
-// static const uint16_t http_service_port = CONFIG_NET_HTTP_SERVER_PORT;
-
-// static uint8_t *index_html_gz = {
-// #include "index.html.gz.inc"
-// };
-
-// static struct http_resource_detail_static index_html_gz_resource_detail = {
-// 	.common = {
-// 			.type = HTTP_RESOURCE_TYPE_STATIC,
-// 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
-// 			.content_encoding = "gzip",
-// 			.content_type = "text/html",
-// 		},
-// 	.static_data = index_html_gz,
-// 	.static_data_len = sizeof(index_html_gz),
-// };
 
