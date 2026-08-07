@@ -64,15 +64,15 @@ static void enable_dhcpv4_server(void)
 	static struct net_in_addr netmaskAddr;
 
 	/* 字符串转地址 */
-	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS, &addr))
+	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_AP_IP_ADDRESS, &addr))
 	{
-		LOG_ERR("Invalid address: %s", CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS);
+		LOG_ERR("Invalid address: %s", CONFIG_WIFI_AP_IP_ADDRESS);
 		return;
 	}
 
-	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_SAMPLE_AP_NETMASK, &netmaskAddr))
+	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_AP_NETMASK, &netmaskAddr))
 	{
-		LOG_ERR("Invalid netmask: %s", CONFIG_WIFI_SAMPLE_AP_NETMASK);
+		LOG_ERR("Invalid netmask: %s", CONFIG_WIFI_AP_NETMASK);
 		return;
 	}
 
@@ -87,7 +87,7 @@ static void enable_dhcpv4_server(void)
 	if (!net_if_ipv4_set_netmask_by_addr(ap_iface, &addr, &netmaskAddr))
 	{
 		LOG_ERR("Unable to set netmask for AP interface: %s",
-				CONFIG_WIFI_SAMPLE_AP_NETMASK);
+				CONFIG_WIFI_AP_NETMASK);
 	}
 
 	addr.s4_addr[3] += 10; /* Starting IPv4 address for DHCPv4 address pool. */
@@ -110,14 +110,14 @@ static int enable_ap_mode(void)
 	}
 
 	LOG_INF("Turning on AP Mode");
-	ap_config.ssid = (const uint8_t *)CONFIG_WIFI_SAMPLE_AP_SSID;
-	ap_config.ssid_length = sizeof(CONFIG_WIFI_SAMPLE_AP_SSID) - 1;
-	ap_config.psk = (const uint8_t *)CONFIG_WIFI_SAMPLE_AP_PSK;
-	ap_config.psk_length = sizeof(CONFIG_WIFI_SAMPLE_AP_PSK) - 1;
+	ap_config.ssid = (const uint8_t *)CONFIG_WIFI_AP_SSID;
+	ap_config.ssid_length = sizeof(CONFIG_WIFI_AP_SSID) - 1;
+	ap_config.psk = (const uint8_t *)CONFIG_WIFI_AP_PSK;
+	ap_config.psk_length = sizeof(CONFIG_WIFI_AP_PSK) - 1;
 	ap_config.channel = WIFI_CHANNEL_ANY;
 	ap_config.band = WIFI_FREQ_BAND_2_4_GHZ;
 
-	if (sizeof(CONFIG_WIFI_SAMPLE_AP_PSK) == 1)
+	if (sizeof(CONFIG_WIFI_AP_PSK) == 1)
 	{
 		ap_config.security = WIFI_SECURITY_TYPE_NONE;
 	}

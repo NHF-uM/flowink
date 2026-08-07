@@ -10,9 +10,9 @@
 static const struct device *const strip = DEVICE_DT_GET(LED_STRIP_NODE);
 
 static const struct led_rgb colors[] = {
-	RGB(CONFIG_SAMPLE_LED_BRIGHTNESS, 0x00, 0x00), /* red */
-	RGB(0x00, CONFIG_SAMPLE_LED_BRIGHTNESS, 0x00), /* green */
-	RGB(0x00, 0x00, CONFIG_SAMPLE_LED_BRIGHTNESS), /* blue */
+	RGB(CONFIG_LED_STRIP_BRIGHTNESS, 0x00, 0x00), /* red */
+	RGB(0x00, CONFIG_LED_STRIP_BRIGHTNESS, 0x00), /* green */
+	RGB(0x00, 0x00, CONFIG_LED_STRIP_BRIGHTNESS), /* blue */
 };
 
 void rgb_strip_on(uint8_t color)
