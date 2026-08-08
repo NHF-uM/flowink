@@ -194,12 +194,12 @@ int main(void)
 	/* 等待ic初始化 */
 	k_sleep(K_SECONDS(5));
 
-	net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
-	net_mgmt_add_event_callback(&net_mgmt_cb);
+	// net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
+	// net_mgmt_add_event_callback(&net_mgmt_cb);
 
-	ap_iface = net_if_get_wifi_sap();
+	// ap_iface = net_if_get_wifi_sap();
 
-	enable_ap_mode();
+	// enable_ap_mode();
 
 	http_server_start();
 	return 0;
