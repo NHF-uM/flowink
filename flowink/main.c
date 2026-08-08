@@ -4,7 +4,7 @@
 #include <ff.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/storage/disk_access.h>
-#include "dlist.h"
+#include <zephyr/sys/dlist.h>
 
 LOG_MODULE_REGISTER(main);
 
@@ -43,55 +43,55 @@ int main(void)
     struct fs_dirent entry;
     struct fs_mount_t *auto_mount_point = &FS_FSTAB_ENTRY(AUTOMOUNT_NODE);
 
-    fs_dir_t_init(&dirp);
-    res = fs_opendir(&dirp, "/SD:");
-    if (res)
-    {
-        printk("Error opening root dir [%d]\n", res);
-        return res;
-    }
+    // fs_dir_t_init(&dirp);
+    // res = fs_opendir(&dirp, "/");
+    // if (res)
+    // {
+    //     printk("Error opening root dir [%d]\n", res);
+    //     return res;
+    // }
 
-    struct pic_dir_entry *pic_dir_entry_root =  k_malloc(sizeof(struct pic_dir_entry));
-    
-    sys_dlist_append(&dlist_dir, pic_dir_entry_root->dir_node);
-    while (1)
-    {
-        /* readdir函数会自动偏移，指向dirp的下一个dir */
-        res = fs_readdir(&dirp, &entry);
+    // struct pic_dir_entry *pic_dir_entry_root =  k_malloc(sizeof(struct pic_dir_entry));
 
-        if (res || entry.name[0] == 0)
-        {
-            break;
-        }
+    // // sys_dlist_append(&dlist_dir, pic_dir_entry_root->dir_node);
+    // while (1)
+    // {
+    //     /* readdir函数会自动偏移，指向dirp的下一个dir */
+    //     res = fs_readdir(&dirp, &entry);
 
-        if (entry.type == FS_DIR_ENTRY_DIR)
-        {
-            printk("[DIR ] %s\n", entry.name);
-        }
-        else
-        {
-            printk("[FILE] %s (size = %zu)\n",
-                   entry.name, entry.size);
-        }
-        cnt++;
-    }
+    //     if (res || entry.name[0] == 0)
+    //     {
+    //         break;
+    //     }
 
-    fs_closedir(&dirp);
-    if (res == 0)
-    {
-        res = cnt;
-    }
-    printk("cnt: %d", cnt);
+    //     if (entry.type == FS_DIR_ENTRY_DIR)
+    //     {
+    //         printk("[DIR ] %s\n", entry.name);
+    //     }
+    //     else
+    //     {
+    //         printk("[FILE] %s (size = %zu)\n",
+    //                entry.name, entry.size);
+    //     }
+    //     cnt++;
+    // }
 
-    res = fs_unmount(auto_mount_point);
-    if (res != 0)
-    {
-        LOG_ERR("Failed to unmount SD filesystem, err:%d", res);
-    }
-    else
-    {
-        LOG_INF("SD filesystem unmount success");
-    }
+    // fs_closedir(&dirp);
+    // if (res == 0)
+    // {
+    //     res = cnt;
+    // }
+    // printk("cnt: %d", cnt);
+
+    // res = fs_unmount(auto_mount_point);
+    // if (res != 0)
+    // {
+    //     LOG_ERR("Failed to unmount SD filesystem, err:%d", res);
+    // }
+    // else
+    // {
+    //     LOG_INF("SD filesystem unmount success");
+    // }
 
     return 0;
 }
