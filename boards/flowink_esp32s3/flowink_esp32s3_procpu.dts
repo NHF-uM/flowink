@@ -6,8 +6,6 @@
 /dts-v1/;
 
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 #include <espressif/partitions_0x0_default_16M.dtsi>
 #include "flowink_esp32s3-pinctrl.dtsi"
 #include <zephyr/dt-bindings/led/led.h>
@@ -32,6 +30,9 @@
 	buttons {
 		compatible = "gpio-keys";
 
+		btn_wakeup: btn0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+		};
 	};
 
 	leds {
@@ -45,6 +46,11 @@
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&gpio0 {
+	/* Configure device as wakeup source */
+	wakeup-source;
 };
 
 &uart0 {
