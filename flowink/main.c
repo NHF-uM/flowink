@@ -153,15 +153,10 @@ void rgb_strip_thread_entry(void)
 K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL,
 				7, 0, 0);
 
-#include <stdio.h>
-#include <inttypes.h>
-
-#include <zephyr/kernel.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
@@ -194,24 +189,13 @@ int main(void)
 	/* 等待ic初始化 */
 	k_sleep(K_SECONDS(5));
 
-	// net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
-	// net_mgmt_add_event_callback(&net_mgmt_cb);
+	net_mgmt_init_event_callback(&net_mgmt_cb, wifi_event_handler, NET_EVENT_WIFI_MASK);
+	net_mgmt_add_event_callback(&net_mgmt_cb);
 
-	// ap_iface = net_if_get_wifi_sap();
+	ap_iface = net_if_get_wifi_sap();
 
-	// enable_ap_mode();
+	enable_ap_mode();
 
 	http_server_start();
 	return 0;
 }
-
-/*
-6. _detail 用户私有自定义数据
-任意指针，会挂载在 http_service 结构体里。
-业务场景：
-传入设备配置结构体、状态指针；
-在路由回调函数中通过 service->detail 拿到业务上下文，不用全局变量。
-7. _res_fallback 兜底资源（404 页面）
-当访问的 URL 没有匹配任何已注册路由时，就返回这个资源。
-一般用 HTTP_RESOURCE_STATIC() 定义一个返回 404 html 的静态资源。
-*/

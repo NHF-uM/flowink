@@ -66,5 +66,4 @@ config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
 
 endmenu
 
-source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"
