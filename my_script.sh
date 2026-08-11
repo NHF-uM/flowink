@@ -1,6 +1,6 @@
 #!/bin/bash    
 
-PORT=ttyUSB0
+PORT=ttyACM0
 
 
 # Check if parameter 1 exists
