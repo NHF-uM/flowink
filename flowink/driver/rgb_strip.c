@@ -1,7 +1,6 @@
 #include "rgb_strip.h"
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/device.h>
-#include "workq_common.h"
 
 #define LED_STRIP_NODE DT_ALIAS(led_strip)
 

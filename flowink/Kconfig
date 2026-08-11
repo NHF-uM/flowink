@@ -42,7 +42,6 @@ config WIFI_AP_NETMASK
 config HTTP_SERVER_SERVICE_PORT
 	int "Port number for http service"
 	default 80
-	depends on NET_SAMPLE_HTTP_SERVICE
 
 endmenu
 

@@ -3,7 +3,7 @@
 #include <zephyr/net/dhcpv4_server.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(wifi_ap_dhcp);
+LOG_MODULE_REGISTER(wifi_ap_dhcp, LOG_LEVEL_DBG);
 
 #define STR_TO_MAC "%02X:%02X:%02X:%02X:%02X:%02X"
 
@@ -71,8 +71,8 @@ static void enable_dhcpv4_server(void)
         return;
     }
 
-    /* 为网络接口设置 IPv4 网关，在 ap 模式下其实不需要设置网关？？能否删除 */
-    net_if_ipv4_set_gw(ap_iface, &addr);
+    /* 为网络接口设置 IPv4 网关，在 ap 模式下不需要设置 */
+    // net_if_ipv4_set_gw(ap_iface, &addr);
 
     if (net_if_ipv4_addr_add(ap_iface, &addr, NET_ADDR_MANUAL, 0) == NULL)
     {

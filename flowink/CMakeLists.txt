@@ -9,11 +9,14 @@ project(flowink)
 
 FILE(GLOB app_sources 
     main.c
-    driver/src/*.c)
+    driver/*.c
+    wifi_ap_dhcp.c
+    http_service.c)
 target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/driver/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
@@ -31,7 +34,7 @@ set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/html_plus/)
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES
     index.html
-    scrip.min.js
+    script.js
 )
 
 # 遍历变量内所有内容，‘&’取出变量值——变量file=变量值

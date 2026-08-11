@@ -36,24 +36,10 @@
 <button class="bottom-btn" id="Send_Button" type="button">Send</button>
 </div>
 <div class="avatar-box">
-<img src="./zkkbb.png" alt="avatar">
+<img src="./zkk.png" alt="avatar">
 </div>
 </div>
 </div>
-<script src="./script.min.js"></script>
-<script>
-document.getElementById('Input_Button').addEventListener('click',()=>{
-document.getElementById('File_Input').click()
-});
-document.getElementById('File_Input').addEventListener('change',function(e){
-const file=e.target.files[0];
-if(!file)return;
-const reader=new FileReader();
-reader.onload=evt=>{
-document.getElementById('Image_Input').src=evt.target.result
-};
-reader.readAsDataURL(file);
-})
-</script>
+<script src="./script.js"></script>
 </body>
 </html>
