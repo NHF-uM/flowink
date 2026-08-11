@@ -24,14 +24,62 @@
 手机 APP 不知道单片机 AP 的 IP 是 192.168.1.1，手机发 UDP 广播 255.255.255.255；单片机监听 UDP，收到广播后回复：我是图片设备，地址192.168.1.1；手机拿到 IP，再去发起 TCP 连接上传图片。
 
 
-应用层      HTTP/自定义图片协议
-  ↓
-传输层     ┌─ TCP(SOCK_STREAM)
-           └─ UDP(SOCK_DGRAM) 
-  ↓
-网络层    IPv4 / IPv6
-  ↓
-链路层    Wi-Fi(AP/STA)
+【第4层：应用层】 （对应OSI 5+6+7层）
+负责业务数据语义：命令、网页、文件、设备交互
+├─ 基于TCP：
+│  • HTTP / HTTPS(HTTP+TLS)    网页服务
+│  • MQTT                     IoT消息
+│  • FTP / SFTP               文件传输
+│  • Telnet、SSH              远程终端
+│  • Modbus TCP               工业协议
+├─ 基于UDP：
+│  • DHCPv4 / DHCPv6          自动分配IP
+│  • DNS                      域名解析
+│  • NTP                      网络时间同步
+│  • CoAP                     IoT轻量协议
+│  • QUIC（HTTP/3底层UDP）
+└─ Zephyr对应组件：http_server, mqtt, coap, dhcpv4, net_sockets
+
+        ↓（调用Socket API，数据加上传输层头部）
+【第3层：传输层】（OSI第4层）
+端到端通信，区分一台设备上多个应用程序（端口号）
+├─ TCP（可靠、面向连接）
+│   • 特性：握手、重传、流量控制、有序、不丢包
+│   • 使用：HTTP、MQTT、SSH
+├─ UDP（无连接、轻量、不可靠）
+│   • 特性：无握手，开销小；不保证送达
+│   • 使用：DHCP、DNS、NTP、音视频
+└─ Zephyr：原生网络栈内置TCP/UDP实现
+
+        ↓（增加IP头部，路由寻址）
+【第2层：网际层 / 互联网层（OSI第3层）】
+跨网段寻址，核心：IP地址
+├─ IPv4（32位地址，你当前项目主力）
+│   • 配套协议：
+│   │   • ICMPv4（ping命令底层）
+│   │   • ARP（IP ↔ MAC地址互相解析【极其关键】）
+│   │   • DHCPv4（**不在这里！DHCP是应用层UDP协议** 很多人搞错！）
+├─ IPv6（128位地址）
+│   • ICMPv6、NDP（替代ARP）、DHCPv6
+└─ Zephyr：CONFIG_NET_IPV4 / CONFIG_NET_IPV6
+
+        ↓（封装成二层帧，通过硬件介质发送）
+【第1层：网络接口层 / 链路层（OSI 1+2层）】
+只负责「相邻两台设备」收发数据；**没有IP概念，依靠MAC地址通信**
+两大类：有线链路 / 无线链路
+├─ 802.3 以太网
+│   • MAC帧、PHY芯片
+├─ 802.11 WiFi（你ESP32-S3 SoftAP/STA）
+│   • WiFi STA（连路由器） / WiFi AP（开热点）
+│   • 802.11 无线帧，依靠无线MAC地址通信
+├─ USB RNDIS / ECM（USB模拟网卡）
+├─ 4G/5G 模组（PPP协议）
+├─ CAN、BLE 6LoWPAN（低速物联网链路）
+├─ WiFi MAC 工作模式：
+│   • STA 模式（无线客户端，连接外部路由器）
+│   • AP 模式（无线接入点，手机连我的热点）
+│   • AP+STA 共存模式（你当前ESP32-S3工程）
+└─ Zephyr：wifi驱动、eth驱动、net_if（统一网络接口抽象）
 
 IP 地址：手机号（定位是哪一台设备）
 端口号：分机号（区分同一台设备里不同程序）

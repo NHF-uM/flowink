@@ -13,7 +13,7 @@ config LED_STRIP_BRIGHTNESS
 
 endmenu
 
-menu "WIFI AP Configuration"
+menu "NET Configuration"
 
 config WIFI_AP_SSID
 	string "SSID of soft AP"
@@ -37,29 +37,9 @@ config WIFI_AP_NETMASK
 	string "Netmask of soft AP"
 	help
 	  Subnet mask for the soft AP interface.
-	  For example: "255.255.255.0"
+	  For example: "255.255.255.0"  
 
-config WIFI_SSID
-	string "SSID of the target AP"
-	help
-	  SSID of the access point to connect to in station mode.
-	  For example: "TARGET-AP"
-
-config WIFI_PSK
-	string "Pre-shared key for target AP"
-	help
-	  WPA2 password used to connect to the target AP.
-	  For example: "PSK"	  
-
-endmenu
-
-menu "WIFI HTTP Configuration"
-
-config NET_SAMPLE_HTTP_SERVICE
-	bool "Enable http service"
-	default y
-
-config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
+config HTTP_SERVER_SERVICE_PORT
 	int "Port number for http service"
 	default 80
 	depends on NET_SAMPLE_HTTP_SERVICE
