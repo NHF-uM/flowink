@@ -34,7 +34,7 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
     {
         struct wifi_ap_sta_info *sta_info = (struct wifi_ap_sta_info *)cb->info;
 
-        LOG_INF("station: " STR_TO_MAC " joined ", sta_info->mac[0], sta_info->mac[1],
+        LOG_DBG("station: " STR_TO_MAC " joined ", sta_info->mac[0], sta_info->mac[1],
                 sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5]);
         break;
     }
@@ -42,7 +42,7 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
     {
         struct wifi_ap_sta_info *sta_info = (struct wifi_ap_sta_info *)cb->info;
 
-        LOG_INF("station: " STR_TO_MAC " leave ", sta_info->mac[0], sta_info->mac[1],
+        LOG_DBG("station: " STR_TO_MAC " leave ", sta_info->mac[0], sta_info->mac[1],
                 sta_info->mac[2], sta_info->mac[3], sta_info->mac[4], sta_info->mac[5]);
         break;
     }

@@ -171,3 +171,46 @@ JS（手脚交互能力）
   HTML 里嵌入了 <script src="/assets/js/main.js">，浏览器继续请求 JS 文件，JS 代码负责：监听上传按钮、选中图片、提交上传请求、拉取 ESP 图片预览等交互功能。
 图片、字体、图标等资源
   页面里的图标、背景图，也会触发额外 URL 请求。
+
+1. 浏览器输入 http://ip/ ————> 发起请求：GET /
+2. Zephyr HTTP Server 匹配路径 / ————> 返回 index.html
+3. 浏览器解析 html ————> 识别 <script src="script.js">
+4. 浏览器自动发起请求：GET /script.js ————> 匹配路径 /script.js ————> 返回 script.js
+5. 浏览器运行 script.js 代码
+6. JS 调用 fetch("/dataUP") ————> 浏览器发起 POST /dataUP，body 请求体 = 原始 BMP 二进制
+7. Zephyr 匹配动态资源 /dataUP ————> 进入data_up_handler分片接收图片数据
+8. 服务器校验 BMP 并处理业务，构造 HTTP 响应发回浏览器
+9. JS 收到响应，执行弹窗提示
+
+```js
+fetch("/dataUP", {
+  method:"POST",
+  headers:{"Content-Type":file.type},
+  body:file
+})
+# 这里的请求体是纯二进制文件，所以在 handler 函数取出的直接就是 bmp 原数据
+```
+HTTP-Request 请求 = 请求头（Header） + 一行空行 + 请求体（Request Body）
+  Headers（请求头）：描述信息：方法、路径、Content-Type、数据长度、客户端信息……**告诉服务器接下来的数据是什么类型、多长**
+  Body（请求体 / 请求正文）：真正要传输的载荷数据（payload）。
+    POST/PUT 才常用；GET 请求不允许带 body。
+
+## 一、JavaScript 基础认知
+
+1. **运行环境**
+- 浏览器：提供 DOM、BOM API，实现网页交互
+- Node.js：脱离浏览器环境，可做后端开发
+> 重点：JS 原生没有文件、网络IO能力，所有接口由宿主环境提供。
+
+## 二、JS 与 HTTP 关系
+HTTP是传输管道，JS是控制收发、处理数据的程序。
+
+1. **JS发起HTTP通信API**
+JS无法手动拼装原始HTTP报文、操作TCP底层，依赖宿主提供接口：
+- `fetch()`：现代标准，基于Promise（项目使用）
+- `XMLHttpRequest`：传统旧接口
+- WebSocket：依靠HTTP握手升级，长连接双向通信
+
+2. **fetch 请求完整流程**
+JS调用fetch → 浏览器完成DNS解析、TCP连接 → 浏览器组装HTTP报文发送 → 服务端响应 → 浏览器解析报文，将数据交付JS
+> JS仅负责发起调用与最终数据处理，底层网络细节由浏览器屏蔽。

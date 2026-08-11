@@ -13,25 +13,25 @@ FILE(GLOB app_sources
 target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
-    ${CMAKE_SOURCE_DIR}/../flowink/driver/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/driver/inc
 )
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
 zephyr_linker_sources(SECTIONS sections-rom.ld)
-zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE
+zephyr_linker_section(
   NAME http_resource_desc_http_service
   KVMA RAM_REGION GROUP RODATA_REGION
 )
 
-# 固定生成目录
+# 固定生成目录和读取目录
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/html_plus/)
 
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES
     index.html
-#     index.js
-#     style.css
+    scrip.min.js
 )
 
 # 遍历变量内所有内容，‘&’取出变量值——变量file=变量值
@@ -39,7 +39,7 @@ foreach(file ${WEB_FILES})
 
 # 读取一个二进制文件，压缩后转为 C 静态数组，生成 .inc 文件：固件；源文件路径；输出路径；转换前先压缩为gzip
 generate_inc_file_for_target(app
-    web/${file}
+    ${read_dir}/${file}
     ${gen_dir}/${file}.gz.inc
     --gzip                
 )
