@@ -48,3 +48,7 @@ generate_inc_file_for_target(app
 )
 endforeach()
 
+generate_inc_file_for_target(app
+    ${read_dir}/zkk.png
+    ${gen_dir}/${file}.inc
+)
