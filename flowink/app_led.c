@@ -7,21 +7,29 @@ LOG_MODULE_REGISTER(app_led);
 
 #define LED_PWR_NODE DT_NODELABEL(led_pwr)
 #define LED_MODE_NODE DT_NODELABEL(led_mode)
+
+struct led_ctx
+{
+    const struct gpio_dt_spec *gpio;
+    struct k_timer timer;
+    bool blinky_en;
+};
+
+static void led_timer_callback(struct k_timer *timer);
 static const struct gpio_dt_spec led_pwr_spec = GPIO_DT_SPEC_GET(LED_PWR_NODE, gpios);
 static const struct gpio_dt_spec led_mode_spec = GPIO_DT_SPEC_GET(LED_MODE_NODE, gpios);
 
-static void led_timer_callback(struct k_timer *timer);
-
-/* timer 隐式初始化为0 */
-struct led_ctx led_pwr = {
+/* 其余成员被隐式初始化为0 */
+struct led_ctx led_pwr_struct = {
     .gpio = &led_pwr_spec,
-    .blinky_en = false,
 };
 
-struct led_ctx led_mode = {
+struct led_ctx led_mode_struct = {
     .gpio = &led_mode_spec,
-    .blinky_en = false,
 };
+
+struct led_ctx *const led_pwr = &led_pwr_struct;
+struct led_ctx *const led_mode = &led_mode_struct;
 
 static void led_timer_callback(struct k_timer *timer)
 {
@@ -59,11 +67,6 @@ void app_led_init(void)
     k_timer_init(&led_mode.timer, led_timer_callback, NULL);
 }
 
-/* 通用LED控制接口：设置常亮/闪烁/关闭
- * @param ctx:    LED上下文
- * @param enable: true开启，false关闭
- * @param period: 闪烁半周期，K_NO_WAIT表示常亮不闪烁
- */
 void app_led_set(struct led_ctx *ctx, bool enable, k_timeout_t period)
 {
     if (!enable)
