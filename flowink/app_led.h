@@ -1,11 +1,13 @@
 #ifndef _APP_LED_H_
 #define _APP_LED_H_
 
+#include <zephyr/kernel.h>
+
 /* 不透明类型，暴露的必须是指针而非实体 */
 struct led_ctx;
 
-extern struct led_ctx *led_pwr;
-extern struct led_ctx *led_mode;
+extern struct led_ctx *const led_pwr;
+extern struct led_ctx *const led_mode;
 
 void app_led_init(void);
 
