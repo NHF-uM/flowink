@@ -5,6 +5,21 @@
 
 LOG_MODULE_REGISTER(main);
 
+/*
+
+手机关掉wifi之后，正常leave，但是之后内存池没有释放，新设备拿不到ip
+[00:00:05.817,000] <inf> wifi_ap_dhcp: AP Mode is enabled.
+[00:00:16.030,000] <dbg> wifi_ap_dhcp: wifi_event_handler: station: 42:DA:1A:EF:18:A8 joined 
+[00:03:14.448,000] <dbg> wifi_ap_dhcp: wifi_event_handler: station: 42:DA:1A:EF:18:A8 leave 
+[00:03:23.957,000] <dbg> wifi_ap_dhcp: wifi_event_handler: station: 28:D0:43:96:A6:2A joined 
+[00:03:24.295,000] <err> net_dhcpv4_server: No free address found in address pool
+[00:03:29.297,000] <err> net_dhcpv4_server: No free address found in address pool
+[00:03:33.655,000] <dbg> wifi_ap_dhcp: wifi_event_handler: station: 28:D0:43:96:A6:2A leave 
+
+[00:01:12.327,000] <dbg> http_server: data_up_handler: picture received succ (1152054 bytes).
+[00:01:12.329,000] <dbg> http_server: data_up_handler: Transmission completed, including response
+
+*/
 int main(void)
 {
 	/* 等待ic初始化 */

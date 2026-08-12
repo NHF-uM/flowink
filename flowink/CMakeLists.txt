@@ -8,10 +8,10 @@ find_package(Python REQUIRED COMPONENTS Interpreter)
 project(flowink)
 
 FILE(GLOB app_sources 
-    main.c
+    app_main.c
     driver/*.c
     wifi_ap_dhcp.c
-    http_service.c)
+    http_server.c)
 target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
@@ -50,5 +50,5 @@ endforeach()
 
 generate_inc_file_for_target(app
     ${read_dir}/zkk.png
-    ${gen_dir}/${file}.inc
+    ${gen_dir}/zkk.png.inc
 )
