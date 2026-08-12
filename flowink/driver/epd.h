@@ -3,7 +3,6 @@
 
 #include <zephyr/types.h>
 
-
 #define EPD_COLOR_BLACK   0x0   
 #define EPD_COLOR_WHITE   0x1   
 #define EPD_COLOR_YELLOW  0x2   
@@ -23,7 +22,7 @@ void epd_reset(void);
 
 /**
  * @brief 上电初始化，检查设备 ready ，配置屏幕参数
- * @param  
+ * @param  无
  */
 void epd_init(void);
 

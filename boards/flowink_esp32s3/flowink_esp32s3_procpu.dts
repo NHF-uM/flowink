@@ -6,8 +6,6 @@
 /dts-v1/;
 
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 #include <espressif/partitions_0x0_default_16M.dtsi>
 #include "flowink_esp32s3-pinctrl.dtsi"
 #include <zephyr/dt-bindings/led/led.h>
@@ -18,7 +16,6 @@
 
 	aliases {
 		uart-0 = &uart0;
-		sw0 = &button0;
 		led-strip = &led_strip;
 	};
 
@@ -28,22 +25,6 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		button0: button_0 {
-			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "BOOT Button";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-
-		user_button: button_1{
-			gpios = <&gpio0 1 (GPIO_ACTIVE_LOW)>;
-			label = "User Button";
-			zephyr,code = <INPUT_KEY_1>;
-		};
 	};
 };
 
@@ -86,7 +67,7 @@
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 		
-	/* 9 is MOSI, 10 is SCLK，11 is CS, 12 is DC（高电平为数据）, 13 is RST, 14 is BUSY */
+	/* 9 is MOSI, 10 is SCLK，11 is CS */
 	epd: epd@0 {
 		compatible = "nhf-um,epd-spi";
 		reg = <0>;

@@ -1,10 +1,10 @@
+#include "epd.h"
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
-#include "epd.h"
-
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(epd, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define EPD_NODE            DT_NODELABEL(epd)
