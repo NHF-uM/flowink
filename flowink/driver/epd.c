@@ -92,10 +92,6 @@ static void epd_refresh(void)
     epd_wait_idle();
 }
 
-/**
- * @brief 复位屏幕驱动芯片
- * @param  无
- */
 void epd_reset(void)
 {
     gpio_pin_set_dt(&epd_gpio_rst, 1);
@@ -180,10 +176,6 @@ void epd_init(void)
     epd_wait_idle();
 }
 
-/**
- * @brief 发送单色像素数据，调用后会等待 busy 线释放
- * @param color
- */
 void epd_fill_color(uint8_t color)
 {
     epd_send_command(0x10);
@@ -199,8 +191,6 @@ void epd_fill_color(uint8_t color)
     epd_refresh();
 }
 
-/// @brief 发送 Image 像素数据，调用后会等待 busy 线释放
-/// @param Image
 void epd_fill_image(uint8_t *Image)
 {
     epd_send_command(0x10);
@@ -215,8 +205,6 @@ void epd_fill_image(uint8_t *Image)
     epd_refresh();
 }
 
-/// @brief 进入休眠模式，再次唤醒需要调用 epd_reset()
-/// @param  无
 void epd_sleep(void)
 {
     epd_send_command(0X02); // Power off
