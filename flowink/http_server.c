@@ -4,20 +4,21 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/net/net_config.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(http_server, LOG_LEVEL_DBG);
 
-static uint8_t index_html_gz[] = {
+static const uint8_t index_html_gz[] = {
 #include "index.html.gz.inc"
 };
 
-static uint8_t script_js_gz[] = {
+static const uint8_t script_js_gz[] = {
 #include "script.js.gz.inc"
 };
 
 static const uint8_t zkk_png[] = {
 #include "zkk.png.inc"
-}
+};
 
 static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
