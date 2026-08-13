@@ -1,4 +1,4 @@
-#include "app_led.h"
+#include "led.h"
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
