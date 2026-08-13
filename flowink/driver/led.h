@@ -9,7 +9,7 @@ struct led_ctx;
 extern struct led_ctx *const led_pwr;
 extern struct led_ctx *const led_mode;
 
-void app_led_init(void);
+void led_init(void);
 
 /**
  * @brief LED控制：关闭 / 常亮 / 闪烁
@@ -17,6 +17,6 @@ void app_led_init(void);
  * @param enable true打开LED；false关闭LED
  * @param period 闪烁半周期：K_NO_WAIT 为常亮，处于关闭状态时该参数不生效
  */
-void app_led_set(struct led_ctx *ctx, bool enable, k_timeout_t period);
+void led_set(struct led_ctx *ctx, bool enable, k_timeout_t period);
 
 #endif

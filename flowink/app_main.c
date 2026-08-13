@@ -3,7 +3,7 @@
 #include <zephyr/logging/log.h>
 
 // #include "pwr_manage.h"
-#include "app_led.h"
+#include "led.h"
 
 LOG_MODULE_REGISTER(main);
 
@@ -68,11 +68,11 @@ int main(void)
 
 	
 
-	// app_led_init();
-	// app_led_set(led_pwr, true, K_NO_WAIT);
-	// app_led_set(led_mode, true, K_MSEC(500));
+	// led_init();
+	// led_set(led_pwr, true, K_NO_WAIT);
+	// led_set(led_mode, true, K_MSEC(500));
 	// k_sleep(K_MSEC(3000));
-	// app_led_set(led_mode, false, K_NO_WAIT);
+	// led_set(led_mode, false, K_NO_WAIT);
 
 
 

@@ -42,7 +42,7 @@ static void led_timer_callback(struct k_timer *timer)
     }
 }
 
-void app_led_init(void)
+void led_init(void)
 {
     int ret;
     if (!gpio_is_ready_dt(led_pwr->gpio) || !gpio_is_ready_dt(led_mode->gpio))
@@ -68,7 +68,7 @@ void app_led_init(void)
     k_timer_init(&led_mode->timer, led_timer_callback, NULL);
 }
 
-void app_led_set(struct led_ctx *ctx, bool enable, k_timeout_t period)
+void led_set(struct led_ctx *ctx, bool enable, k_timeout_t period)
 {
     if (!enable)
     {
