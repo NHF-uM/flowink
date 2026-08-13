@@ -66,7 +66,7 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 		data_received = 0;
 		return -1;
 	}
-	case HTTP_SERVER_TRANSACTION_COMPLETE:	/* 响应也发送完成 */
+	case HTTP_SERVER_TRANSACTION_COMPLETE: /* 响应也发送完成 */
 	{
 		LOG_DBG("Transmission completed, including response");
 		data_received = 0;
@@ -78,7 +78,12 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 
 	/* 未发送完成，存储数据*/
 	data_received += request_ctx->data_len;
-	LOG_DBG("data has been received (%zd bytes)", data_received);
+	
+	/* 每隔8192字节发送一次日志（太快的话log会丢包） */
+	if (data_received / 8192 > (data_received - request_ctx->data_len) / 8192)
+	{
+		LOG_DBG("data has been received (%zd bytes)", data_received);
+	}
 
 	if (status == HTTP_SERVER_REQUEST_DATA_FINAL)
 	{
@@ -89,7 +94,7 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 		static char *response_str = "Upload Succ";
 		/* 填充response，status 和 header只会在第一次回调的时候被填充 */
 		response_ctx->status = HTTP_200_OK;
-		response_ctx->body = (const uint8_t*)response_str;
+		response_ctx->body = (const uint8_t *)response_str;
 		response_ctx->body_len = sizeof(response_str) - 1;
 		/* 只有当 final_chunk 为1的时候，才会发送response（结构和request相似，一次response只对应一次request，分包只是 TCP 的作用，和http没有关系） */
 		response_ctx->final_chunk = true;
