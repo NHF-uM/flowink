@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(pwr_m);
 
 #define WAKEUP_IO_NODE DT_ALIAS(pwr_wakeup_io)
 static const struct gpio_dt_spec wakeup_io_spec = GPIO_DT_SPEC_GET(WAKEUP_IO_NODE, gpios);
-static wakeup_source_t wakeup_cause; 
+static wakeup_source_t wakeup_cause;
 
 /// @brief 更新并保存深度休眠唤醒原因
 /// @param  无
@@ -32,17 +32,16 @@ static void pwr_update_wakeup_cause(void)
     else
     {
         LOG_INF("CPU woken up by unknown wakeup source:%d", cause);
+        wakeup_cause = WAKEUP_UNKNOWN;
     }
-
-    wakeup_cause = WAKEUP_UNKNOWN;
 }
 
 /// @brief 配置唤醒引脚，更新记录唤醒源
-/// @param  
+/// @param
 void pwr_init(void)
 {
     pwr_update_wakeup_cause();
-    
+
     if (!gpio_is_ready_dt(&wakeup_io_spec))
     {
         LOG_ERR("pwr_wakeup pin not ready \n");
@@ -50,8 +49,8 @@ void pwr_init(void)
     }
 
     // if (!device_is_ready(retained_mem_device)) {
-	// 	LOG_ERR("retained_mem device is not ready!\n");
-	// 	return 0;
+    // 	LOG_ERR("retained_mem device is not ready!\n");
+    // 	return 0;
     // }
 
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入和中断触发 */

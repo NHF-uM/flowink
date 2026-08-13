@@ -6,11 +6,11 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(flowink)
 
 FILE(GLOB app_sources 
-    main.c
-    driver/src/*.c)
+    app_main.c
+    driver/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-# 添加workq_common.h所在头文件目录
 target_include_directories(app PRIVATE
-    ${CMAKE_SOURCE_DIR}/../flowink/driver/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
