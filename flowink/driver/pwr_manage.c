@@ -1,13 +1,13 @@
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwr_m);
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
+#include <zephyr/logging/log.h>
 #include "pwr_manage.h"
 #include <esp_sleep.h>
+
+LOG_MODULE_REGISTER(pwr_m, LOG_LEVEL_DBG);
 
 #define WAKEUP_IO_NODE DT_ALIAS(pwr_wakeup_io)
 static const struct gpio_dt_spec wakeup_io_spec = GPIO_DT_SPEC_GET(WAKEUP_IO_NODE, gpios);
