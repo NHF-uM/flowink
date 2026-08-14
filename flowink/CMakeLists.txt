@@ -9,10 +9,22 @@ project(flowink)
 
 FILE(GLOB app_sources 
     app_main.c
-    driver/*.c)
+    driver/*.c
+    server/*.c
+    test/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/driver
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}/server
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+)
+
+set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/test/bmp_source/)
+
+generate_inc_file_for_target(app
+    ${read_dir}/test.bmp
+    ${gen_dir}/test.bmp.inc
 )

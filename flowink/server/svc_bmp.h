@@ -27,4 +27,6 @@ typedef struct {
 } __attribute__((packed)) bmp_info_header_t;
 
 
+int bmp_decode_to_epd(const uint8_t *bmp_buf, uint8_t *epd_buf, bool rotate_180);
+
 #endif
