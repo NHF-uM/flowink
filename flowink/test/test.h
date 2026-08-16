@@ -2,5 +2,6 @@
 #define _TEST_H_
 
 void test_bmp(void);
+void test_pwr(void);
 
 #endif

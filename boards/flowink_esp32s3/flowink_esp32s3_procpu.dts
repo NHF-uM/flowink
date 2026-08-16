@@ -16,7 +16,6 @@
 
 	aliases {
 		uart-0 = &uart0;
-		led-strip = &led_strip;
 	};
 
 	chosen {
@@ -26,6 +25,60 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btn_wakeup: btn0 {
+			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | GPIO_INT_WAKEUP)>;
+		};
+
+		btn_mode: btn1 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_pwr: led0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_mode: led1 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/* 从 rtc-slow-ram 分了256字节出来，用 remained-ram 组件管理 */
+	memory@50001f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x50001f00 0x100>;
+		zephyr,memory-region = "RTC_SLOW_RAM_RETAINED_MEM";
+		status = "okay";
+
+		retained_mem0: retaine_mem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+};
+
+&rtc_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&rtc_slow_ram {
+	/* Shrink rtc_slow_ram size to avoid overlap with retained memory region:
+	 * 8KB - 256 = 0x1f00
+	 */
+	reg = <0x50000000 0x1f00>;
+};
+
+&gpio0 {
+	/* Configure device as wakeup source */
+	wakeup-source;
 };
 
 &uart0 {
