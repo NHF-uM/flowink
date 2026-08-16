@@ -112,3 +112,22 @@
 &dma {
 	status = "okay";
 };
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+		
+	/* 9 is MOSI, 10 is SCLK，11 is CS */
+	epd: epd@0 {
+		compatible = "nhf-um,epd-spi";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		rst-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		busy-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; 
+	};
+};

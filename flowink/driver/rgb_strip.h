@@ -1,7 +1,7 @@
 #ifndef _RGB_STRIP_H_
 #define _RGB_STRIP_H_
 
-#include <zephyr/kernel.h>
+#include <stdint.h>
 
 enum {
     RED = 0,

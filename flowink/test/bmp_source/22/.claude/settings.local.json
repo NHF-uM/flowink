@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\\\\flowink\\\\test\\\\bmp_source\\\\22\" -type f)",
+      "Bash(find \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\\\\flowink\\\\driver\" \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\\\\flowink\\\\server\" -type f)",
+      "Bash(find \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\\\\flowink\" -name \"EPD_7in3e.h\" -o -name \"EPD_*.h\")",
+      "Bash(grep -rn \"EPD_7IN3E_BLACK\\\\|EPD_7IN3E_WHITE\\\\|EPD_7IN3E_GREEN\\\\|EPD_7IN3E_BLUE\\\\|EPD_7IN3E_RED\\\\|EPD_7IN3E_YELLOW\\\\|EPD_7IN3E_ORANGE\\\\|#define EPD_7IN3E\" \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\")",
+      "Bash(grep -rln \"epd:\" \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\" --include=*.dts --include=*.dtsi --include=*.overlay --include=*.conf)",
+      "Bash(find \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\" -name \"*.overlay\" -o -name \"*.dts\")",
+      "Bash(grep -rln \"epd\\\\|EPD\\\\|dc_gpios\\\\|cs-gpios\\\\|busy_gpios\" \"\\\\\\\\wsl.localhost\\\\Ubuntu-24.04\\\\home\\\\nhf_um\\\\zephyrproject\\\\flowink\" --include=*.dts --include=*.dtsi --include=*.overlay)",
+      "Bash(grep *)",
+      "Bash(ls *)"
+    ]
+  }
+}

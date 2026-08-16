@@ -1,0 +1,27 @@
+# Common fields for epd-spi(4 lines)
+description: |
+  Binding for the EPD (Electronic Paper Display) SPI device.
+
+compatible: "nhf-um,epd-spi"
+
+include: spi-device.yaml
+
+properties:
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      high when data is to be sent.
+
+  rst-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      low to reset the epd-display-ic.
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The busy GPIO should be pulled up.
