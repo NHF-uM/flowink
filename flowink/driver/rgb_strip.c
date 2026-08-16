@@ -2,7 +2,7 @@
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/device.h>
 
-#define LED_STRIP_NODE DT_ALIAS(led_strip)
+#define LED_STRIP_NODE DT_NODELABEL(led_strip)
 
 #define RGB(_r, _g, _b) { .r = (_r), .g = (_g), .b = (_b) }
 

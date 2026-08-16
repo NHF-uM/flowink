@@ -3,11 +3,12 @@
 
 mainmenu "FlowInk Configuration"
 
-config BTN_LONG_PRESSED_INTERVAL
-	int "Interval for Btn's Long-Pressing"
-	default 2000
+config WAKEUP_TIME_SEC
+	int "Wakeup time in seconds"
+	default 43200
 	help
-	  interval in ms
+	  This option sets the time in seconds after which the device
+	  will wake up from deep sleep. Defaults to 12 hours.
 
 menu "WS2812 Sample Configuration"
 
