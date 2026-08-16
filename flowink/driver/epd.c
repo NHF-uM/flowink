@@ -4,10 +4,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
+#include <string.h>
 
-LOG_MODULE_REGISTER(epd, CONFIG_LOG_DEFAULT_LEVEL);
+LOG_MODULE_REGISTER(epd, LOG_LEVEL_DBG);
 
-#define EPD_NODE            DT_NODELABEL(epd)
+#define EPD_NODE DT_NODELABEL(epd)
 
 const struct spi_dt_spec epd_spi = SPI_DT_SPEC_GET(EPD_NODE, SPI_OP_MODE_MASTER | SPI_WORD_SET(8));
 const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
@@ -39,12 +41,10 @@ static void epd_lowlevel_init(void)
  */
 static void epd_wait_idle(void)
 {
-    LOG_INF("e-Paper busy H\r\n");
     while (!gpio_pin_get_dt(&epd_gpio_busy))
     {
-        k_sleep(K_MSEC(5));
+        k_sleep(K_MSEC(2));
     }
-    LOG_INF("e-Paper busy H release\r\n");
 }
 
 static void epd_send_command(uint8_t cmd)
@@ -65,6 +65,19 @@ static void epd_send_data(uint8_t data)
         .count = 1,
     };
     spi_write_dt(&epd_spi, &tx_buf);
+}
+
+/**
+ * @brief 批量发送数据
+ * @param data 数据指针
+ * @param len 数据长度
+ */
+static void epd_send_data_bulk(const uint8_t *data, uint32_t len)
+{
+    gpio_pin_set_dt(&epd_gpio_dc, 1);
+    struct spi_buf tx = {.buf = (void *)data, .len = len};
+    struct spi_buf_set tx_set = {.buffers = &tx, .count = 1};
+    spi_write_dt(&epd_spi, &tx_set);
 }
 
 /**
@@ -178,32 +191,50 @@ void epd_init(void)
 
 void epd_fill_color(uint8_t color)
 {
+    uint8_t *buf = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_SIZE_BYTE);
+    memset(buf, (color << 4) | color, EPD_SIZE_BYTE);
     epd_send_command(0x10);
-
-    for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
-    {
-        for (uint16_t i = 0; i < EPD_7IN3E_WIDTH; i++)
-        {
-            epd_send_data((color << 4) | color);
-        }
-    }
-
+    epd_send_data_bulk(buf, EPD_SIZE_BYTE);
+    shared_multi_heap_free(buf);
     epd_refresh();
 }
 
 void epd_fill_image(uint8_t *Image)
 {
     epd_send_command(0x10);
-
-    for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
-    {
-        for (uint16_t i = 0; i < EPD_7IN3E_WIDTH; i++)
-        {
-            epd_send_data(Image[i + j * EPD_7IN3E_WIDTH]);
-        }
-    }
+    epd_send_data_bulk(Image, EPD_SIZE_BYTE);
     epd_refresh();
 }
+
+// void epd_fill_color(uint8_t color)
+// {
+//     epd_send_command(0x10);
+
+//     uint16_t width = EPD_7IN3E_WIDTH / 2;
+//     for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
+//     {
+//         for (uint16_t i = 0; i < width; i++)
+//         {
+//             epd_send_data((color << 4) | color);
+//         }
+//     }
+
+//     epd_refresh();
+// }
+
+// void epd_fill_image(uint8_t *Image)
+// {
+//     epd_send_command(0x10);
+
+//     for (uint16_t j = 0; j < EPD_7IN3E_HEIGHT; j++)
+//     {
+//         for (uint16_t i = 0; i < EPD_7IN3E_WIDTH; i++)
+//         {
+//             epd_send_data(Image[i + j * EPD_7IN3E_WIDTH]);
+//         }
+//     }
+//     epd_refresh();
+// }
 
 void epd_sleep(void)
 {

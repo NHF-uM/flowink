@@ -76,8 +76,5 @@
 		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		rst-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 		busy-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; 
-
-		width = <800>;
-		height = <480>;
 	};
 };

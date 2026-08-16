@@ -1,6 +1,6 @@
 #!/bin/bash    
 
-PORT=ttyUSB0
+PORT=ttyACM0
 
 
 # Check if parameter 1 exists
@@ -48,52 +48,70 @@ if [ -n "$2" ]; then
         f)
             # Flash
 			cd ~/zephyrproject/flowink/build || exit 1
+			west flash
+			# ESPTOOL_BIN="${ESPTOOL_BIN:-$(command -v esptool)}"
+			# if [ -z "$ESPTOOL_BIN" ]; then
+			# 	echo "esptool is not available in PATH. Activate the Python environment that provides it first."
+			# 	exit 1
+			# fi
 
-			ESPTOOL_BIN="${ESPTOOL_BIN:-$(command -v esptool)}"
-			if [ -z "$ESPTOOL_BIN" ]; then
-				echo "esptool is not available in PATH. Activate the Python environment that provides it first."
-				exit 1
-			fi
+			# ESPTOOL_PORT="${ESPTOOL_PORT:-/dev/$PORT}"
 
-			ESPTOOL_PORT="${ESPTOOL_PORT:-/dev/$PORT}"
+			# FLASH_ARGS=(
+			# 	--chip esp32s3
+			# 	--port "$ESPTOOL_PORT"
+			# 	--baud 921600
+			# 	--before default-reset
+			# 	--after hard-reset
+			# 	write-flash -u
+			# 	--flash-mode dio
+			# 	--flash-freq 80m
+			# 	--flash-size 16MB
+			# 	0x0
+			# 	zephyr/zephyr.bin
+			# )
 
-			FLASH_ARGS=(
-				--chip esp32s3
-				--port "$ESPTOOL_PORT"
-				--baud 921600
-				--before default-reset
-				--after hard-reset
-				write-flash -u
-				--flash-mode dio
-				--flash-freq 80m
-				--flash-size 16MB
-				0x0
-				zephyr/zephyr.bin
-			)
+			# FLASH_LOG=$(mktemp)
+			# if "$ESPTOOL_BIN" "${FLASH_ARGS[@]}" 2>"$FLASH_LOG"; then
+			# 	rm -f "$FLASH_LOG"
+			# 	exit 0
+			# fi
 
-			FLASH_LOG=$(mktemp)
-			if "$ESPTOOL_BIN" "${FLASH_ARGS[@]}" 2>"$FLASH_LOG"; then
-				rm -f "$FLASH_LOG"
-				exit 0
-			fi
+			# if grep -Eqi 'Permission denied|could not open port|port is busy or doesn'\''t exist' "$FLASH_LOG"; then
+			# 	echo "Direct access to $ESPTOOL_PORT failed, retrying with sudo."
+			# 	sudo -E env "PATH=$PATH" "$ESPTOOL_BIN" "${FLASH_ARGS[@]}"
+			# else
+			# 	cat "$FLASH_LOG" >&2
+			# 	rm -f "$FLASH_LOG"
+			# 	exit 1
+			# fi
 
-			if grep -Eqi 'Permission denied|could not open port|port is busy or doesn'\''t exist' "$FLASH_LOG"; then
-				echo "Direct access to $ESPTOOL_PORT failed, retrying with sudo."
-				sudo -E env "PATH=$PATH" "$ESPTOOL_BIN" "${FLASH_ARGS[@]}"
-			else
-				cat "$FLASH_LOG" >&2
-				rm -f "$FLASH_LOG"
-				exit 1
-			fi
+			# rm -f "$FLASH_LOG"
 
-			rm -f "$FLASH_LOG"
-
-			ls /dev/ttyA*
-			ls /dev/ttyU*
+			# ls /dev/ttyA*
+			# ls /dev/ttyU*
 
 			exit 0
             ;;
-            
+        
+		m)
+			west build -t menuconfig
+			exit 0
+			;;
+
+		s)
+			cd ~/zephyrproject/ || exit 1
+
+			if [ ! -d "~/zephyrproject/build" ]; then
+				echo "文件夹不存在: $DIR"
+				exit 1
+			fi
+
+			rm -rf ~/zephyrproject/build
+			echo "文件夹已删除: $DIR"
+			exit 0
+			;;
+			 
         # 兜底：匹配 f/c 以外的所有参数
         *)
             echo "Error: Unknown parameter '$2', only support [f / c]"
@@ -119,42 +137,43 @@ west build \
 # Flash
 
 cd ~/zephyrproject/flowink/build || exit 1
+west flash
 
-ESPTOOL_BIN="${ESPTOOL_BIN:-$(command -v esptool)}"
-if [ -z "$ESPTOOL_BIN" ]; then
-	echo "esptool is not available in PATH. Activate the Python environment that provides it first."
-	exit 1
-fi
+# ESPTOOL_BIN="${ESPTOOL_BIN:-$(command -v esptool)}"
+# if [ -z "$ESPTOOL_BIN" ]; then
+# 	echo "esptool is not available in PATH. Activate the Python environment that provides it first."
+# 	exit 1
+# fi
 
-ESPTOOL_PORT="${ESPTOOL_PORT:-/dev/$PORT}"
+# ESPTOOL_PORT="${ESPTOOL_PORT:-/dev/$PORT}"
 
-FLASH_ARGS=(
-	--chip esp32s3
-	--port "$ESPTOOL_PORT"
-	--baud 921600
-	--before default-reset
-	--after hard-reset
-	write-flash -u
-	--flash-mode dio
-	--flash-freq 80m
-	--flash-size 16MB
-	0x0
-	zephyr/zephyr.bin
-)
+# FLASH_ARGS=(
+# 	--chip esp32s3
+# 	--port "$ESPTOOL_PORT"
+# 	--baud 921600
+# 	--before default-reset
+# 	--after hard-reset
+# 	write-flash -u
+# 	--flash-mode dio
+# 	--flash-freq 80m
+# 	--flash-size 16MB
+# 	0x0
+# 	zephyr/zephyr.bin
+# )
 
-FLASH_LOG=$(mktemp)
-if "$ESPTOOL_BIN" "${FLASH_ARGS[@]}" 2>"$FLASH_LOG"; then
-	rm -f "$FLASH_LOG"
-	exit 0
-fi
+# FLASH_LOG=$(mktemp)
+# if "$ESPTOOL_BIN" "${FLASH_ARGS[@]}" 2>"$FLASH_LOG"; then
+# 	rm -f "$FLASH_LOG"
+# 	exit 0
+# fi
 
-if grep -Eqi 'Permission denied|could not open port|port is busy or doesn'\''t exist' "$FLASH_LOG"; then
-	echo "Direct access to $ESPTOOL_PORT failed, retrying with sudo."
-	sudo -E env "PATH=$PATH" "$ESPTOOL_BIN" "${FLASH_ARGS[@]}"
-else
-	cat "$FLASH_LOG" >&2
-	rm -f "$FLASH_LOG"
-	exit 1
-fi
+# if grep -Eqi 'Permission denied|could not open port|port is busy or doesn'\''t exist' "$FLASH_LOG"; then
+# 	echo "Direct access to $ESPTOOL_PORT failed, retrying with sudo."
+# 	sudo -E env "PATH=$PATH" "$ESPTOOL_BIN" "${FLASH_ARGS[@]}"
+# else
+# 	cat "$FLASH_LOG" >&2
+# 	rm -f "$FLASH_LOG"
+# 	exit 1
+# fi
 
-rm -f "$FLASH_LOG"
+# rm -f "$FLASH_LOG"

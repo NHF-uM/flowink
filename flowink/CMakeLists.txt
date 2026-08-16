@@ -8,7 +8,7 @@ find_package(Python REQUIRED COMPONENTS Interpreter)
 project(flowink)
 
 FILE(GLOB app_sources 
-    app_main.c
+    app/*.c
     driver/*.c
     server/*.c
     test/*.c)

@@ -10,9 +10,9 @@
 #define EPD_COLOR_BLUE    0x5   
 #define EPD_COLOR_GREEN   0x6   
 
-#define EPD_7IN3E_WIDTH     DT_PROP(EPD_NODE, width)
-#define EPD_7IN3E_HEIGHT    DT_PROP(EPD_NODE, height)
-#define EPD_SIZE_BYTE       ((EPD_7IN3E_WIDTH % 2 == 0 ? (EPD_7IN3E_WIDTH / 2) : (EPD_7IN3E_WIDTH / 2 + 1)) * EPD_7IN3E_HEIGHT)
+#define EPD_7IN3E_WIDTH     (800)
+#define EPD_7IN3E_HEIGHT    (480)
+#define EPD_SIZE_BYTE       (192000)
 
 /**
  * @brief 复位屏幕驱动芯片

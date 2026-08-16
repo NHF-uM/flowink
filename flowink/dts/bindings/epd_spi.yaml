@@ -25,13 +25,3 @@ properties:
     required: true
     description: |
       The busy GPIO should be pulled up.
-
-  width:
-    type: int
-    description: |
-      The width of the epd.
-
-  height:
-    type: int
-    description: |
-      The height of the epd.

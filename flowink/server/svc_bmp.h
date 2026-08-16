@@ -2,6 +2,7 @@
 #define _SVC_BMP_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     uint16_t bType;         // 文件标识，固定为 0x4D42 ("BM")
