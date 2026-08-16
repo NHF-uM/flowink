@@ -4,6 +4,7 @@
 #include <zephyr/drivers/retained_mem.h>
 #include <zephyr/logging/log.h>
 #include "pwr_manage.h"
+#include "rgb_strip.h"
 #include <esp_sleep.h>
 
 LOG_MODULE_REGISTER(test_pwr, LOG_LEVEL_DBG);
