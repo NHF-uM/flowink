@@ -11,7 +11,7 @@ FILE(GLOB app_sources
     app/*.c
     app/net/*.c
     driver/*.c
-    server/*.c    
+    server/*.c  
     test/*.c)
 target_sources(app PRIVATE ${app_sources})
 
@@ -20,6 +20,7 @@ target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/app/net
     ${CMAKE_CURRENT_SOURCE_DIR}/driver
     ${CMAKE_CURRENT_SOURCE_DIR}/server
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
 )
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)

@@ -105,7 +105,7 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 		/* 只有当 final_chunk 为1的时候，才会发送response（结构和request相似，一次response只对应一次request，分包只是 TCP 的作用，和http没有关系） */
 		response_ctx->final_chunk = true;
 
-		k_sem_give(sem_http_data_uping);
+		k_sem_give(&sem_http_data_uping);
 	}
 	return 0;
 }

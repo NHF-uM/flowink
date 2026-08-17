@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(app_btn, LOG_LEVEL_DBG);
 
 static struct gpio_dt_spec btn_mode_spec = GPIO_DT_SPEC_GET(BTN_MODE_NODE, gpios);
 
-static bool is_server_mode; /* 0 为基础模式，1 为服务器模式 */
+static bool is_server_mode = true; /* 0 为基础模式，1 为服务器模式 */
 static Button btn_mode;
 K_EVENT_DEFINE(btn_mode_event);
 

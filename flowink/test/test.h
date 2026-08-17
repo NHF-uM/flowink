@@ -3,5 +3,6 @@
 
 void test_bmp(void);
 void test_pwr(void);
+void test_net(void);
 
 #endif
