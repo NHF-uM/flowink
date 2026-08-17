@@ -97,7 +97,7 @@ int main(void)
                         continue;
                     }
                     http_set_revc_buf(data_bmp);
-                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 119200);
+                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 192000);
                     if (data_epd == NULL)
                     {
                         LOG_ERR("Failed to allocate memory for data_epd");
