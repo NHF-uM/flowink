@@ -2,7 +2,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/util_macro.h>
 #include "multi_button.h"
 #include "app_btn.h"
 
@@ -12,7 +11,7 @@ LOG_MODULE_REGISTER(app_btn, LOG_LEVEL_DBG);
 
 static struct gpio_dt_spec btn_mode_spec = GPIO_DT_SPEC_GET(BTN_MODE_NODE, gpios);
 
-static bool btn_mode_selected; /* 0 为基础模式，1 为服务器模式 */
+static bool is_server_mode; /* 0 为基础模式，1 为服务器模式 */
 static Button btn_mode;
 K_EVENT_DEFINE(btn_mode_event);
 
@@ -24,25 +23,22 @@ uint8_t read_btn(uint8_t button_id)
 static void btn_mode_clicked_cb(Button *btn, void *user_data)
 {
 	LOG_DBG("Button mode pressed");
-
-	k_event_post(&btn_mode_event, BTN_BIT_MODE_WAITING);
-
-	if (btn_mode_selected)
-	{
-		btn_mode_selected = false;
-		k_event_post(&btn_mode_event, BTN_BIT_MODE_BASIC);
-	}
-	else
-	{
-		btn_mode_selected = true;
-		k_event_post(&btn_mode_event, BTN_BIT_MODE_SERVER);
-	}
+	is_server_mode = !is_server_mode;
+	k_event_set_masked(&btn_mode_event, is_server_mode ? BTN_BIT_MODE_SERVER : BTN_BIT_MODE_BASIC,
+					   BTN_BIT_MODE_ALL);
 }
 
 static void btn_mode_long_press_cb(Button *btn, void *user_data)
 {
 	LOG_DBG("Button mode long pressed");
-	k_event_post(&btn_mode_event, BTN_BIT_MODE_SELECTED);
+	if (is_server_mode)
+	{
+		k_event_set_masked(&btn_mode_event, BTN_BIT_MODE_SERVER | BTN_BIT_MODE_SELECTED, BTN_BIT_MODE_ALL);
+	}
+	else
+	{
+		k_event_set_masked(&btn_mode_event, BTN_BIT_MODE_BASIC | BTN_BIT_MODE_SELECTED, BTN_BIT_MODE_ALL);
+	}
 }
 
 static void btn_mode_timer_callback(struct k_timer *timer)

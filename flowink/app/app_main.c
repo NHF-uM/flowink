@@ -11,11 +11,14 @@ LOG_MODULE_REGISTER(main);
 int main(void)
 {
     pwr_init();
+    led_init();
+    led_set(led_pwr, true, K_FOREVER);
 
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
 
     if (wake_cause == WAKEUP_TIMER)
     {
+
     }
     else
     {
@@ -23,10 +26,12 @@ int main(void)
 
         while (1)
         {
-            k_event_wait(&btn_mode_event, BTN_BIT_MODE_BASIC | BTN_BIT_MODE_SERVER | BTN_BIT_MODE_SELECTED, true, K_FOREVER);
-            uint32_t flags = k_event_test(&btn_mode_event, BTN_BIT_MODE_BASIC | BTN_BIT_MODE_SERVER | BTN_BIT_MODE_SELECTED);
+            /* 单击切换模式（仅置位模式），长按确定选择（具体模式和确定选择都置位） */
+            uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_MODE_SELECTED)
             {
+                led_set(led_mode, false, K_NO_WAIT);
+
                 if (flags & BTN_BIT_MODE_BASIC)
                 {
                     LOG_DBG("Basic mode selected");
@@ -34,17 +39,22 @@ int main(void)
                 else if (flags & BTN_BIT_MODE_SERVER)
                 {
                     LOG_DBG("Server mode selected");
+                    // wifi_init();
+                    // http_server_start();
+                    // 永远阻塞？或者等待一个刷图完成信号量就把server给stop了
                 }
             }
-            else 
+            else
             {
                 if (flags & BTN_BIT_MODE_BASIC)
                 {
-                    led_set();
+                    LOG_DBG("Basic mode led invoked");
+                    led_set(led_mode, true, 200);
                 }
                 else if (flags & BTN_BIT_MODE_SERVER)
                 {
-                    led_set();
+                    LOG_DBG("Server mode led invoked");
+                    led_set(led_mode, true, 1000);
                 }
             }
         }
