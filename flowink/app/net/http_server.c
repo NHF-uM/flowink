@@ -20,6 +20,10 @@ static const uint8_t zkk_png[] = {
 #include "zkk.png.inc"
 };
 
+static size_t data_received;
+static uint8_t *recv_buf;
+K_SEM_DEFINE(sem_http_data_uping, 0, 1);	/* starts off "available" */
+
 static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
 		.type = HTTP_RESOURCE_TYPE_STATIC,
@@ -52,8 +56,6 @@ static struct http_resource_detail_static zkk_png_resource_detail = {
 	.static_data_len = sizeof(zkk_png),
 };
 
-static size_t data_received;
-
 static int data_up_handler(struct http_client_ctx *client, enum http_transaction_status status,
 						   const struct http_request_ctx *request_ctx,
 						   struct http_response_ctx *response_ctx, void *user_data)
@@ -77,8 +79,12 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 	}
 
 	/* 未发送完成，存储数据*/
+	if (recv_buf)
+	{
+		memcpy(recv_buf + data_received, request_ctx->data, request_ctx->data_len);
+	}
 	data_received += request_ctx->data_len;
-	
+
 	/* 每隔8192字节发送一次日志（太快的话log会丢包） */
 	if (data_received / 8192 > (data_received - request_ctx->data_len) / 8192)
 	{
@@ -98,6 +104,8 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 		response_ctx->body_len = sizeof(response_str) - 1;
 		/* 只有当 final_chunk 为1的时候，才会发送response（结构和request相似，一次response只对应一次request，分包只是 TCP 的作用，和http没有关系） */
 		response_ctx->final_chunk = true;
+
+		k_sem_give(sem_http_data_uping);
 	}
 	return 0;
 }
@@ -121,3 +129,8 @@ HTTP_RESOURCE_DEFINE(script_js_gz_resource, http_service, "/script.js",
 					 &script_js_gz_resource_detail);
 HTTP_RESOURCE_DEFINE(zkk_png_resource, http_service, "/zkk.png", &zkk_png_resource_detail);
 HTTP_RESOURCE_DEFINE(data_up_resource, http_service, "/dataUP", &data_up_resource_detail);
+
+void http_set_revc_buf(uint8_t *bmp_buf)
+{
+	recv_buf = bmp_buf;
+}

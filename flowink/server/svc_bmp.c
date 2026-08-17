@@ -14,13 +14,6 @@ LOG_MODULE_REGISTER(svc_bmp, LOG_LEVEL_DBG);
         }                             \
     } while (0)
 
-/**
- * @brief 把原始 bmp 数据转换为 epd 数据
- * @param bmp_buf  输入 bmp
- * @param epd_buf  输出到epd
- * @param rotate_180 是否需要旋转180°，满足屏幕的放置需求
- * @return
- */
 int bmp_decode_to_epd(const uint8_t *bmp_buf, uint8_t *epd_buf, bool rotate_180)
 {
     BMP_CHECK_PTR(bmp_buf);

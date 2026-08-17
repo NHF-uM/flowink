@@ -9,13 +9,6 @@ LOG_MODULE_REGISTER(app_led);
 #define LED_PWR_NODE DT_NODELABEL(led_pwr)
 #define LED_MODE_NODE DT_NODELABEL(led_mode)
 
-struct led_ctx
-{
-    const struct gpio_dt_spec *gpio;
-    struct k_timer timer;
-    bool blinky_en;
-};
-
 static void led_timer_callback(struct k_timer *timer);
 static const struct gpio_dt_spec led_pwr_spec = GPIO_DT_SPEC_GET(LED_PWR_NODE, gpios);
 static const struct gpio_dt_spec led_mode_spec = GPIO_DT_SPEC_GET(LED_MODE_NODE, gpios);
