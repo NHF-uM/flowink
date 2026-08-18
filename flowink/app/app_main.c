@@ -2,6 +2,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
+#include <zephyr/drivers/retained_mem.h>
 #include <zephyr/logging/log.h>
 #include "pwr_manage.h"
 #include "led.h"
@@ -13,6 +14,20 @@
 #include "test.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+
+#define RETAIN_MAGIC 0xA55AA55A // 魔法校验值，区分冷启动/休眠唤醒
+#define RETAIN_OFFSET_MAGIC 0
+#define RETAIN_OFFSET_WAKE_CNT 4
+
+#define EPD_REFLUSH(_reflush_func)            \
+    do                                        \
+    {                                         \
+        epd_reset();                          \
+        led_set(led_pwr, true, K_MSEC(500));  \
+        _reflush_func;                        \
+        epd_sleep();                          \
+        led_set(led_pwr, true, K_FORVERY); \
+    } while (0)
 
 // static const uint8_t bmp[] = {
 // #include "test.bmp.inc"
@@ -50,12 +65,16 @@ int main(void)
 
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
 
-    // epd_init();
-    wifi_init();
-    http_server_start();
+    epd_init();
 
     if (wake_cause == WAKEUP_TIMER)
     {
+        /* 遍历tf卡，生成双链表 */
+        /* 读取config.txt */
+        /* 检查retained mem记录的路径和文件是否还存在 */
+        /* 轮播时间和循环与否根据配置文件，若路径和文件存在，则读取并刷图下一张 */
+        /* 保存新的路径和文件 */
+        /* 休眠 */
     }
     else
     {
@@ -71,22 +90,25 @@ int main(void)
                 if (flags & BTN_BIT_MODE_BASIC)
                 {
                     LOG_DBG("Basic mode selected");
-                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 119200);
+                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 192000);
                     if (data_epd == NULL)
                     {
                         LOG_ERR("Failed to allocate memory for data_epd");
                         continue;
                     }
-                    // bmp_decode_to_epd(bmp, data_epd, false);
-                    //     epd_fill_image(data_epd);
-                    //     epd_sleep();
+                    bmp_decode_to_epd(bmp, data_epd, false);
+                    EPD_REFLUSH(epd_fill_image(data_epd));
                     shared_multi_heap_free(data_epd);
                 }
                 else if (flags & BTN_BIT_MODE_SERVER)
                 {
                     LOG_DBG("Server mode selected");
 
-                    extern void wifi_deinit1(void);
+                    wifi_init();
+                    http_server_start();
+                    k_sleep(K_SECONDS(2));
+
+                    extern void wifi_deinit(void);
                     extern void http_server_stop(void);
                     extern void http_set_revc_buf(uint8_t *bmp_buf);
                     extern struct k_sem sem_http_data_uping;
@@ -107,14 +129,13 @@ int main(void)
                     k_sem_take(&sem_http_data_uping, K_FOREVER);
                     k_sem_give(&sem_http_data_uping);
                     bmp_decode_to_epd(data_bmp, data_epd, false);
-                    // epd_fill_image(data_epd);
-                    // epd_sleep();
+                    EPD_REFLUSH(epd_fill_image(data_epd));
 
-                    // shared_multi_heap_free(data_bmp);
-                    // shared_multi_heap_free(data_epd);
+                    shared_multi_heap_free(data_bmp);
+                    shared_multi_heap_free(data_epd);
 
-                    // http_server_stop();
-                    // wifi_deinit1();
+                    http_server_stop();
+                    wifi_deinit();
                 }
             }
             else

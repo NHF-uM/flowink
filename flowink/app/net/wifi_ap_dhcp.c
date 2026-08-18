@@ -143,7 +143,7 @@ void wifi_init(void)
     enable_ap_mode();
 }
 
-void wifi_deinit1(void)
+void wifi_deinit(void)
 {
     net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, ap_iface, NULL, 0);
     net_dhcpv4_server_stop(ap_iface);

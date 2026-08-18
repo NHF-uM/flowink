@@ -16,6 +16,8 @@ const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
 const struct gpio_dt_spec epd_gpio_busy = GPIO_DT_SPEC_GET(EPD_NODE, busy_gpios);
 
+static uint16_t wait_time_cnt;
+
 static void epd_lowlevel_init(void)
 {
     gpio_pin_configure_dt(&epd_gpio_dc, GPIO_OUTPUT_LOW);
@@ -44,6 +46,13 @@ static void epd_wait_idle(void)
     while (!gpio_pin_get_dt(&epd_gpio_busy))
     {
         k_sleep(K_MSEC(2));
+        wait_time_cnt++;
+
+        if (wait_time_cnt > 30000)
+        {
+            LOG_ERR("EPD busy timeout");
+            return;
+        }
     }
 }
 
