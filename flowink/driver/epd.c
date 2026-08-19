@@ -46,13 +46,13 @@ static void epd_wait_idle(void)
     while (!gpio_pin_get_dt(&epd_gpio_busy))
     {
         k_sleep(K_MSEC(2));
-        wait_time_cnt++;
+        // wait_time_cnt++;
 
-        if (wait_time_cnt > 30000)
-        {
-            LOG_ERR("EPD busy timeout");
-            return;
-        }
+        // if (wait_time_cnt > 30000)
+        // {
+        //     LOG_ERR("EPD busy timeout");
+        //     return;
+        // }
     }
 }
 

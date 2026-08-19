@@ -62,12 +62,6 @@ void pwr_init(void)
         LOG_ERR("fail to configure btn_wakeup pin: %d", ret);
         return;
     }
-
-    if (!pm_device_wakeup_enable(btn_wakeup_spec.port, true))
-    {
-        LOG_ERR("failed to enable wakeup pin \n");
-        return;
-    }
 }
 
 wakeup_source_t pwr_get_wakeup_cause(void)

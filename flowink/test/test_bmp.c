@@ -8,9 +8,9 @@
 
 LOG_MODULE_REGISTER(test_bmp, LOG_LEVEL_DBG);
 
-static const uint8_t bmp[] = {
-#include "test.bmp.inc"
-};
+// static const uint8_t bmp[] = {
+// #include "test.bmp.inc"
+// };
 
 void test_bmp(void)
 {
@@ -25,7 +25,7 @@ void test_bmp(void)
     }
     memset(bmp_decoded, 0xFF, EPD_SIZE_BYTE); 
 
-    bmp_decode_to_epd(bmp, bmp_decoded, false);
+    // bmp_decode_to_epd(bmp, bmp_decoded, false);
 
     epd_fill_image(bmp_decoded);
     k_sleep(K_SECONDS(5));

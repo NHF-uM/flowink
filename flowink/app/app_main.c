@@ -15,48 +15,20 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define RETAIN_MAGIC 0xA55AA55A // 魔法校验值，区分冷启动/休眠唤醒
-#define RETAIN_OFFSET_MAGIC 0
-#define RETAIN_OFFSET_WAKE_CNT 4
-
-#define EPD_REFLUSH(_reflush_func)            \
-    do                                        \
-    {                                         \
-        epd_reset();                          \
-        led_set(led_pwr, true, K_MSEC(500));  \
-        _reflush_func;                        \
-        epd_sleep();                          \
-        led_set(led_pwr, true, K_FORVERY); \
+#define EPD_REFLUSH(_reflush_func)           \
+    do                                       \
+    {                                        \
+        epd_reset();                         \
+        led_set(led_pwr, true, K_MSEC(500)); \
+        _reflush_func;                       \
+        epd_sleep();                         \
+        led_set(led_pwr, true, K_FOREVER);   \
     } while (0)
 
-// static const uint8_t bmp[] = {
-// #include "test.bmp.inc"
-// };
+static const uint8_t bmp[] = {
+#include "test.bmp.inc"
+};
 
-/*
- * [00:01:06.785,000] <dbg> http_server: data_up_handler: data has been received (1138786 bytes)
-[00:01:06.810,000] <dbg> http_server: data_up_handler: data has been received (1147034 bytes)
-[00:01:06.838,000] <dbg> http_server: data_up_handler: picture received succ (1152054 bytes).
-[00:01:06.839,000] <dbg> http_server: data_up_handler: Transmission completed, including response
-[00:01:06.839,000] <dbg> svc_bmp: bmp_decode_to_epd: BMP header: type=0x4D42, bitcount=24, offset=54
-[00:01:06.949,000] <dbg> svc_bmp: bmp_decode_to_epd: bmp decode to epd finish, rotate_180=0
-[00:01:06.949,000] <err> os_heap: heap corruption (buffer overflow?) at 0x3c1bc2b8
-[00:01:06.949,000] <err> os:  ** FATAL EXCEPTION
-[00:01:06.949,000] <err> os:  ** CPU 0 EXCCAUSE 63 (zephyr exception)
-[00:01:06.949,000] <err> os:  **  PC 0x403783db VADDR 0
-[00:01:06.949,000] <err> os:  **  PS 0x60a20
-[00:01:06.949,000] <err> os:  **    (INTLEVEL:0 EXCM: 0 UM:1 RING:0 WOE:1 OWB:10 CALLINC:2)
-[00:01:06.949,000] <err> os:  **  A0 0x820086a8  SP 0x3fc9dff0  A2 0x4  A3 0x1840
-[00:01:06.949,000] <err> os:  **  A4 0x3fc9dff0  A5 0  A6 0x3fcac680  A7 0x3fc9df80
-[00:01:06.949,000] <err> os:  **  A8 0x8037c478  A9 0x3fc9df60 A10 0x3fcac680 A11 0x3fc9923c
-[00:01:06.949,000] <err> os:  ** A12 0x1840 A13 0 A14 0xc A15 0x3fc9def0
-[00:01:06.949,000] <err> os:  ** LBEG 0x40056f5c LEND 0x40056f72 LCOUNT 0xffffffff
-[00:01:06.949,000] <err> os:  ** SAR 0x4
-[00:01:06.949,000] <err> os:  **  THREADPTR 0x10
-[00:01:06.949,000] <err> os: >>> ZEPHYR FATAL ERROR 4: Kernel panic on CPU 0
-[00:01:06.949,000] <err> os: Current thread: 0x3fcaf138 (unknown)
-[00:01:07.134,000] <err> os: Halting system
- */
 int main(void)
 {
     pwr_init();
@@ -66,6 +38,21 @@ int main(void)
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
 
     epd_init();
+    /* 这样能正常刷，为什么下面的不行 */
+    {
+        uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_SIZE_BYTE);
+        if (data_epd == NULL)
+        {
+            LOG_ERR("Failed to allocate memory for data_epd");
+            return -1;
+        }
+        bmp_decode_to_epd(bmp, data_epd, false);
+        epd_fill_image(data_epd);
+        k_sleep(K_SECONDS(5));
+        epd_sleep();
+        shared_multi_heap_free(data_epd);
+        return 0;
+    }
 
     if (wake_cause == WAKEUP_TIMER)
     {
@@ -99,6 +86,7 @@ int main(void)
                     bmp_decode_to_epd(bmp, data_epd, false);
                     EPD_REFLUSH(epd_fill_image(data_epd));
                     shared_multi_heap_free(data_epd);
+                    LOG_DBG("Basic mode finished");
                 }
                 else if (flags & BTN_BIT_MODE_SERVER)
                 {
@@ -106,9 +94,8 @@ int main(void)
 
                     wifi_init();
                     http_server_start();
-                    k_sleep(K_SECONDS(2));
 
-                    extern void wifi_deinit(void);
+                    extern void wifi_deinit1(void);
                     extern void http_server_stop(void);
                     extern void http_set_revc_buf(uint8_t *bmp_buf);
                     extern struct k_sem sem_http_data_uping;
@@ -123,19 +110,22 @@ int main(void)
                     if (data_epd == NULL)
                     {
                         LOG_ERR("Failed to allocate memory for data_epd");
-                        shared_multi_heap_free(data_bmp);
                         continue;
                     }
+                    LOG_DBG("Waiting for data upload to complete...");
                     k_sem_take(&sem_http_data_uping, K_FOREVER);
                     k_sem_give(&sem_http_data_uping);
-                    bmp_decode_to_epd(data_bmp, data_epd, false);
+                    bmp_decode_to_epd(data_bmp, data_epd, true);
                     EPD_REFLUSH(epd_fill_image(data_epd));
 
                     shared_multi_heap_free(data_bmp);
                     shared_multi_heap_free(data_epd);
 
+                    LOG_DBG("Server mode finished, stopping HTTP server and deinitializing Wi-Fi...");
                     http_server_stop();
-                    wifi_deinit();
+                    wifi_deinit1();
+
+                    LOG_DBG("Server mode finished");
                 }
             }
             else
