@@ -38,6 +38,14 @@ int main(void)
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
 
     epd_init();
+    
+    {
+        epd_fill_color(EPD_COLOR_WHITE);
+        k_sleep(K_SECONDS(1));
+        epd_sleep();
+        return 0;
+    }
+
     /* 这样能正常刷，为什么下面的不行 */
     {
         uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_SIZE_BYTE);
