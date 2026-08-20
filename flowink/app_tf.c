@@ -2,12 +2,6 @@
 // char *file_tf;
 // char *file_memory;
 
-// struct carousel_info
-// {
-//     char *carousel_file_path;
-//     uint32_t carousel_interval;
-//     bool auto_play;
-// }
 
 // voidtf_ls_file(void)
 // {

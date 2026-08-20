@@ -14,8 +14,10 @@ LOG_MODULE_REGISTER(main);
 
 #define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/" DISK_DRIVE_NAME ":"
-// #define FS_RET_OK FR_OK
+#define CONFIG_FILE_PATH DISK_MOUNT_PT "/config.txt" // "/SD:/config.txt"
+
 static FATFS fat_fs;
+
 /* mounting info */
 static struct fs_mount_t mp = {
     .type = FS_FATFS,
@@ -28,7 +30,6 @@ static sys_dlist_t dlist_dir;
 struct ctx_dir
 {
     char dir_path[128];
-    char dir_name[32];
 
     sys_dnode_t dir_node;
     sys_dlist_t dlist_file;
@@ -39,15 +40,16 @@ struct ctx_dir
 struct ctx_file
 {
     char file_path[128];
-    char file_name[32];
 
     sys_dnode_t file_node;
 };
 
-uint16_t loop_delay;
-char *folder_path;
-bool loop_subfolder;
-char *start_file_name;
+struct carousel_info
+{
+    char *start_file_path;      /* 轮播开始文件 */
+    uint32_t carousel_interval; /* 轮播间隔 */
+    bool loop_play;             /* 文件夹内循环播放，默认开启 */
+};
 
 /**
  * @brief 判断文件类型
@@ -71,6 +73,177 @@ static bool file_endswith(const char *str, const char *suffix)
     return strcmp(str + (str_len - suf_len), suffix) == 0;
 }
 
+int tf_read_config(struct carousel_info *carousel_info)
+{
+    int ret = 0;
+    char file_buf[512];
+
+    struct fs_file_t fd;
+    fs_file_t_init(&fd);
+
+    ret = fs_open(&fd, CONFIG_FILE_PATH, FS_O_READ);
+    if (ret != 0)
+    {
+        LOG_WRN("Failed to open config file, err:%d", ret);
+        goto fail;
+    }
+
+    // 4. 一次性读取整个配置文件到缓冲区
+    ret = fs_read(&fd, file_buf, sizeof(file_buf) - 1);
+    if (ret < 0)
+    {
+        LOG_WRN("Failed to read config file, err:%d, use default config", ret);
+        goto fail;
+    }
+    file_buf[ret] = '\0'; // 确保字符串以 '\0' 结尾
+
+    // 5. 逐行解析配置内容
+    char *line_ptr = file_buf;
+    char *next_line;
+
+    while (*line_ptr != '\0')
+    {
+        // 定位行尾换行符，分割单行
+        next_line = strchr(line_ptr, '\n');
+        if (next_line != NULL)
+        {
+            *next_line = '\0'; // 截断当前行
+            next_line++;       // 指针移动到下一行开头
+        }
+        else
+        {
+            next_line = line_ptr + strlen(line_ptr); // 处理最后一行
+        }
+
+        // 去除行尾回车符 \r，兼容 Windows 换行格式
+        size_t line_len = strlen(line_ptr);
+        if (line_len > 0 && line_ptr[line_len - 1] == '\r')
+        {
+            line_ptr[line_len - 1] = '\0';
+        }
+
+        // 跳过行首空格、制表符
+        char *p = line_ptr;
+        while (*p == ' ' || *p == '\t')
+        {
+            p++;
+        }
+
+        // 跳过空行和注释行（# 开头）
+        if (*p == '\0' || *p == '#')
+        {
+            line_ptr = next_line;
+            continue;
+        }
+
+        // 查找等号位置，分割键和值
+        char *eq_pos = strchr(p, '=');
+        if (eq_pos == NULL)
+        {
+            line_ptr = next_line; // 无等号的无效行直接跳过
+            continue;
+        }
+        *eq_pos = '\0';
+        char *key = p;
+        char *value = eq_pos + 1;
+
+        // 修剪 key 尾部的空格
+        char *key_end = eq_pos - 1;
+        while (key_end > key && (*key_end == ' ' || *key_end == '\t'))
+        {
+            *key_end = '\0';
+            key_end--;
+        }
+
+        // 修剪 value 首尾的空格
+        while (*value == ' ' || *value == '\t')
+        {
+            value++;
+        }
+        char *value_end = value + strlen(value) - 1;
+        while (value_end > value && (*value_end == ' ' || *value_end == '\t'))
+        {
+            *value_end = '\0';
+            value_end--;
+        }
+
+        // 提取双引号包裹的实际配置值
+        if (*value != '"' || *value_end != '"')
+        {
+            line_ptr = next_line; // 格式不符合要求，跳过该行
+            continue;
+        }
+        value++;
+        *value_end = '\0';
+
+        // 6. 匹配配置项并赋值，带参数合法性校验
+        if (strcmp(key, "loop_interval") == 0)
+        {
+            uint32_t interval = strtoul(value, NULL, 10);
+            if (interval >= 300 && interval <= 86400)
+            {
+                carousel_info->carousel_interval = interval;
+            }
+            else
+            {
+                LOG_WRN("loop_interval=%u out of range [300, 86400], keep default %u",
+                        interval, carousel_info->carousel_interval);
+                carousel_info->carousel_interval = 0;
+            }
+        }
+        else if (strcmp(key, "loop_subfolder") == 0)
+        {
+            if (strcmp(value, "1") == 0)
+            {
+                carousel_info->loop_play = true;
+            }
+            else if (strcmp(value, "0") == 0)
+            {
+                carousel_info->loop_play = false;
+            }
+            else
+            {
+                LOG_WRN("loop_subfolder invalid value '%s', keep default true", value);
+                carousel_info->loop_play = true;
+            }
+        }
+        else if (strcmp(key, "start_file_name") == 0)
+        {
+            // 先释放之前可能分配的内存，避免泄漏
+            if (carousel_info->start_file_path != NULL)
+            {
+                free(carousel_info->start_file_path);
+                carousel_info->start_file_path = NULL;
+            }
+
+            if (strlen(value) > 0)
+            {
+                // 拼接完整绝对路径：挂载点 + / + 配置的相对路径
+                size_t path_size = strlen(disk_mount_pt) + 1 + strlen(value) + 1;
+                char *full_path = malloc(path_size);
+                if (full_path == NULL)
+                {
+                    LOG_WRN("malloc for start_file_path failed");
+                }
+                else
+                {
+                    snprintf(full_path, path_size, "%s/%s", disk_mount_pt, value);
+                    carousel_info->start_file_path = full_path;
+                }
+            }
+        }
+
+        line_ptr = next_line;
+    }
+
+    return 0; /* 正常出口在分支前面 */
+
+fail:
+    carousel_info->start_file_path = NULL;
+    carousel_info->carousel_interval = 0;
+    return -1;
+}
+
 int main(void)
 {
 
@@ -83,65 +256,41 @@ int main(void)
 
     sys_dlist_init(&dlist_dir);
 
-    do
+    if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_CTRL_INIT, NULL) != 0)
     {
-        if (disk_access_ioctl(disk_pdrv,
-                              DISK_IOCTL_CTRL_INIT, NULL) != 0)
-        {
-            LOG_ERR("Storage init ERROR!");
-            break;
-        }
+        LOG_ERR("Storage init ERROR!");
+        return -EIO;
+    }
 
-        if (disk_access_ioctl(disk_pdrv,
-                              DISK_IOCTL_GET_SECTOR_COUNT, &block_count))
-        {
-            LOG_ERR("Unable to get sector count");
-            break;
-        }
-        LOG_INF("Block count %u", block_count);
+    if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_COUNT, &block_count))
+    {
+        LOG_ERR("Unable to get sector count");
+        return -EIO;
+    }
+    LOG_INF("Block count %u", block_count);
 
-        if (disk_access_ioctl(disk_pdrv,
-                              DISK_IOCTL_GET_SECTOR_SIZE, &block_size))
-        {
-            LOG_ERR("Unable to get sector size");
-            break;
-        }
-        printk("Sector size %u\n", block_size);
+    if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_SIZE, &block_size))
+    {
+        LOG_ERR("Unable to get sector size");
+        return -EIO;
+    }
+    printk("Sector size %u\n", block_size);
 
-        memory_size_mb = (uint64_t)block_count * block_size;
-        printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb >> 20));
-    } while (0);
+    memory_size_mb = (uint64_t)block_count * block_size;
+    printk("Memory Size(MB) %u\n", (uint32_t)(memory_size_mb >> 20));
 
     mp.mnt_point = disk_mount_pt;
     res = fs_mount(&mp);
-
-    if (res == 0)
+    if (res != 0)
     {
-        printk("Disk mounted.\n");
-        /* Try to unmount and remount the disk */
-        res = fs_unmount(&mp);
-        if (res != 0)
-        {
-            printk("Error unmounting disk\n");
-            return res;
-        }
-        res = fs_mount(&mp);
-        if (res != 0)
-        {
-            printk("Error remounting disk\n");
-            return res;
-        }
-    }
-    else
-    {
-        printk("Error mounting disk.\n");
+        printk("Error mounting disk, err:%d\n", res);
         return res;
     }
+    printk("Disk mounted.\n");
 
     uint16_t cnt = 0;
     struct fs_dir_t dirp;
     struct fs_dirent entry;
-    // struct fs_mount_t *auto_mount_point = &FS_FSTAB_ENTRY(AUTOMOUNT_NODE);
 
     // fs_dir_t_init(&dirp);
     // res = fs_opendir(&dirp, disk_mount_pt);
@@ -155,12 +304,13 @@ int main(void)
     // if (ctx_dir_root == NULL)
     // {
     //     LOG_ERR("malloc root dir failed");
-    //     return -ENOMEM;
+    //     return -1;
     // }
 
     // strcpy(ctx_dir_root->dir_path, disk_mount_pt);
     // strcpy(ctx_dir_root->dir_name, "");
 
+    // snprintf(ctx_dir_root->dir_path, sizeof(ctx_dir_root->dir_path), "%s", disk_mount_pt);
     // sys_dlist_init(&ctx_dir_root->dlist_file);
     // ctx_dir_root->file_num = 0;
     // sys_dlist_append(&dlist_dir, &ctx_dir_root->dir_node);
@@ -188,17 +338,13 @@ int main(void)
 
     //         snprintf(ctx_dir_sub->dir_path, sizeof(ctx_dir_sub->dir_path),
     //                  "%s/%s", disk_mount_pt, entry.name);
-    //         strncpy(ctx_dir_sub->dir_name, entry.name, sizeof(ctx_dir_sub->dir_name) - 1);
-    //         ctx_dir_sub->dir_name[sizeof(ctx_dir_sub->dir_name) - 1] = '\0';
-
     //         sys_dlist_init(&ctx_dir_sub->dlist_file);
     //         ctx_dir_sub->file_num = 0;
-
     //         sys_dlist_append(&dlist_dir, &ctx_dir_sub->dir_node);
 
     //         /* 解析额外一层文件夹：读取一级子文件夹内部所有文件 */
     //         struct fs_dir_t dirp_sub;
-    //         struct fs_dirent entyr_sub;
+    //         struct fs_dirent entry_sub;
     //         int sub_res;
 
     //         fs_dir_t_init(&dirp_sub);
@@ -224,7 +370,7 @@ int main(void)
 
     //             LOG_DBG("  [SUB FILE] %s (size = %zu)", entyr_sub.name, entyr_sub.size);
 
-    //             if (file_endswith(entry.name, ".bmp"))
+    //             if (file_endswith(entry_sub.name, ".bmp"))
     //             {
     //                 struct ctx_file *ctx_file_sub = k_malloc(sizeof(struct ctx_file));
     //                 if (ctx_file_sub == NULL)
@@ -235,15 +381,13 @@ int main(void)
 
     //                 snprintf(ctx_file_sub->file_path, sizeof(ctx_file_sub->file_path),
     //                          "%s/%s", ctx_dir_sub->dir_path, entyr_sub.name);
-    //                 strncpy(ctx_file_sub->file_name, entyr_sub.name, sizeof(ctx_file_sub->file_name) - 1);
-    //                 ctx_file_sub->file_name[sizeof(ctx_file_sub->file_name) - 1] = '\0';
 
     //                 sys_dlist_append(&ctx_dir_sub->dlist_file, &ctx_file_sub->file_node);
     //                 ctx_dir_sub->file_num++;
     //             }
     //             else
     //             {
-    //                 LOG_WRN("invaild file extension");
+    //                  LOG_WRN("invalid file extension: %s", entry_sub.name);
     //             }
     //         }
     //         fs_closedir(&dirp_sub);
@@ -256,122 +400,7 @@ int main(void)
 
     //         if (file_endswith(entry.name, ".txt"))
     //         {
-    //             char file_path[128];
-    //             snprintf(file_path, sizeof(file_path), "%s/%s", disk_mount_pt, entry.name);
 
-    //             struct fs_file_t fd;
-    //             fs_file_t_init(&fd);
-
-    //             res = fs_open(&fd, file_path, FS_O_READ);
-    //             if (res != 0)
-    //             {
-    //                 LOG_WRN("Failed to open config file %s, err:%d", file_path, res);
-    //                 continue;
-    //             }
-
-    //             /* 读取配置文件到缓冲区 */
-    //             char buf[512];
-    //             ssize_t bytes_read = fs_read(&fd, buf, sizeof(buf) - 1);
-    //             if (bytes_read <= 0)
-    //             {
-    //                 LOG_WRN("Failed to read config file %s", file_path);
-    //                 fs_close(&fd);
-    //                 continue;
-    //             }
-    //             buf[bytes_read] = '\0';
-    //             fs_close(&fd);
-
-    //             /* 逐行解析 key=value */
-    //             char *line = buf;
-    //             char *next_line;
-
-    //             while (line != NULL && *line != '\0')
-    //             {
-    //                 /* 查找当前行结尾 */
-    //                 char *end = strchr(line, '\n');
-    //                 if (end != NULL)
-    //                 {
-    //                     *end = '\0';
-    //                     next_line = end + 1;
-    //                 }
-    //                 else
-    //                 {
-    //                     next_line = NULL;
-    //                 }
-
-    //                 /* 去除 Windows 换行符 \r */
-    //                 size_t len = strlen(line);
-    //                 if (len > 0 && line[len - 1] == '\r')
-    //                 {
-    //                     line[len - 1] = '\0';
-    //                 }
-
-    //                 /* 跳过空行和注释行 */
-    //                 if (line[0] != '\0' && line[0] != '#')
-    //                 {
-    //                     char *eq = strchr(line, '=');
-    //                     if (eq != NULL)
-    //                     {
-    //                         *eq = '\0';
-    //                         char *key = line;
-    //                         char *value = eq + 1;
-
-    //                         if (strcmp(key, "loop_delay") == 0)
-    //                         {
-    //                             loop_delay = (uint16_t)atoi(value);
-    //                         }
-    //                         else if (strcmp(key, "folder_path") == 0)
-    //                         {
-    //                             if (folder_path != NULL)
-    //                             {
-    //                                 k_free(folder_path);
-    //                             }
-    //                             if (strlen(value) > 0)
-    //                             {
-    //                                 folder_path = k_malloc(strlen(value) + 1);
-    //                                 if (folder_path != NULL)
-    //                                 {
-    //                                     strcpy(folder_path, value);
-    //                                 }
-    //                             }
-    //                             else
-    //                             {
-    //                                 folder_path = NULL;
-    //                             }
-    //                         }
-    //                         else if (strcmp(key, "loop_subfolder") == 0)
-    //                         {
-    //                             loop_subfolder = (atoi(value) == 1);
-    //                         }
-    //                         else if (strcmp(key, "start_file_name") == 0)
-    //                         {
-    //                             if (start_file_name != NULL)
-    //                             {
-    //                                 k_free(start_file_name);
-    //                             }
-    //                             if (strlen(value) > 0)
-    //                             {
-    //                                 start_file_name = k_malloc(strlen(value) + 1);
-    //                                 if (start_file_name != NULL)
-    //                                 {
-    //                                     strcpy(start_file_name, value);
-    //                                 }
-    //                             }
-    //                             else
-    //                             {
-    //                                 start_file_name = NULL;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //                 line = next_line;
-    //             }
-
-    //             LOG_INF("Config loaded: delay=%u, folder=%s, sub_loop=%d, start=%s",
-    //                     loop_delay,
-    //                     folder_path ? folder_path : "(root)",
-    //                     loop_subfolder,
-    //                     start_file_name ? start_file_name : "(none)");
     //         }
     //         else if (file_endswith(entry.name, ".bmp"))
     //         {
@@ -384,19 +413,19 @@ int main(void)
 
     //             snprintf(ctx_file_root->file_path, sizeof(ctx_file_root->file_path),
     //                      "%s/%s", disk_mount_pt, entry.name);
-    //             strncpy(ctx_file_root->file_name, entry.name, sizeof(ctx_file_root->file_name) - 1);
-    //             ctx_file_root->file_name[sizeof(ctx_file_root->file_name) - 1] = '\0';
 
     //             sys_dlist_append(&ctx_dir_root->dlist_file, &ctx_file_root->file_node);
     //             ctx_dir_root->file_num++;
     //         }
     //         else
     //         {
-    //             LOG_WRN("invaild file extension");
+    //             LOG_WRN("invalid file extension: %s", entry.name);
     //         }
     //     }
     //     cnt++;
     // }
+
+    //  LOG_INF("Root dir scan done, total entries: %u", cnt);
 
     // fs_closedir(&dirp);
     // LOG_INF("Root dir scan done, total entries: %u", cnt);
