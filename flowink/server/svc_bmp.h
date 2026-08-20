@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define BMP_ORIGINAL_SIZE   (1152054)
+
 typedef struct {
     uint16_t bType;         // 文件标识，固定为 0x4D42 ("BM")
     uint32_t bSize;         // 整个BMP文件的大小（字节）

@@ -198,24 +198,24 @@ void epd_init(void)
     epd_wait_idle();
 }
 
-void epd_fill_color(uint8_t color)
+void epd_show_color(uint8_t color)
 {
-    uint8_t *buf = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_SIZE_BYTE);
-    memset(buf, (color << 4) | color, EPD_SIZE_BYTE);
+    uint8_t *buf = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_DATA_SIZE);
+    memset(buf, (color << 4) | color, EPD_DATA_SIZE);
     epd_send_command(0x10);
-    epd_send_data_bulk(buf, EPD_SIZE_BYTE);
+    epd_send_data_bulk(buf, EPD_DATA_SIZE);
     shared_multi_heap_free(buf);
     epd_refresh();
 }
 
-void epd_fill_image(uint8_t *Image)
+void epd_show_image(uint8_t *Image)
 {
     epd_send_command(0x10);
-    epd_send_data_bulk(Image, EPD_SIZE_BYTE);
+    epd_send_data_bulk(Image, EPD_DATA_SIZE);
     epd_refresh();
 }
 
-// void epd_fill_color(uint8_t color)
+// void epd_show_color(uint8_t color)
 // {
 //     epd_send_command(0x10);
 
@@ -231,7 +231,7 @@ void epd_fill_image(uint8_t *Image)
 //     epd_refresh();
 // }
 
-// void epd_fill_image(uint8_t *Image)
+// void epd_show_image(uint8_t *Image)
 // {
 //     epd_send_command(0x10);
 

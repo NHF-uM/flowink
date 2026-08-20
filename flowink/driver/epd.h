@@ -12,7 +12,7 @@
 
 #define EPD_7IN3E_WIDTH     (800)
 #define EPD_7IN3E_HEIGHT    (480)
-#define EPD_SIZE_BYTE       (192000)
+#define EPD_DATA_SIZE       (192000)
 
 /**
  * @brief 复位屏幕驱动芯片
@@ -27,16 +27,16 @@ void epd_reset(void);
 void epd_init(void);
 
 /**
- * @brief 发送单色像素数据，调用后会等待 busy 线释放
+ * @brief 发送单色像素数据并刷图，会等待 busy 线释放
  * @param color
  */
-void epd_fill_color(uint8_t color);
+void epd_show_color(uint8_t color);
 
 /**
- * @brief 发送 Image 像素数据，调用后会等待 busy 线释放
+ * @brief 发送 Image 像素数据并刷图，会等待 busy 线释放
  * @param Image 
  */
-void epd_fill_image(uint8_t *Image);
+void epd_show_image(uint8_t *Image);
 
 /**
  * @brief 进入休眠模式，再次唤醒需要调用 epd_reset()

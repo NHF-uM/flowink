@@ -18,16 +18,10 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 #define EPD_REFLUSH(_reflush_func)           \
     do                                       \
     {                                        \
-        epd_reset();                         \
         led_set(led_pwr, true, K_MSEC(500)); \
         _reflush_func;                       \
-        epd_sleep();                         \
         led_set(led_pwr, true, K_FOREVER);   \
     } while (0)
-
-static const uint8_t bmp[] = {
-#include "test.bmp.inc"
-};
 
 int main(void)
 {
@@ -38,9 +32,9 @@ int main(void)
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
 
     epd_init();
-    
+
     {
-        epd_fill_color(EPD_COLOR_WHITE);
+        epd_show_color(EPD_COLOR_WHITE);
         k_sleep(K_SECONDS(1));
         epd_sleep();
         return 0;
@@ -48,28 +42,23 @@ int main(void)
 
     /* 这样能正常刷，为什么下面的不行 */
     {
-        uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_SIZE_BYTE);
-        if (data_epd == NULL)
-        {
-            LOG_ERR("Failed to allocate memory for data_epd");
-            return -1;
-        }
-        bmp_decode_to_epd(bmp, data_epd, false);
-        epd_fill_image(data_epd);
-        k_sleep(K_SECONDS(5));
+        test_bmp_play_pic();
+        k_sleep(K_SECONDS(1));
         epd_sleep();
-        shared_multi_heap_free(data_epd);
         return 0;
     }
 
     if (wake_cause == WAKEUP_TIMER)
     {
         /* 遍历tf卡，生成双链表 */
-        /* 读取config.txt */
-        /* 检查retained mem记录的路径和文件是否还存在 */
-        /* 轮播时间和循环与否根据配置文件，若路径和文件存在，则读取并刷图下一张 */
+        /* 读取config.txt，得到轮播时间和循环与否，也读起始路径和起始文件名，不然后面不存在的话怎么办 */
+        /* 读取retained mem记录的路径和文件名 */
+        /* 检查tf卡是否还存在上述文件 */
+        /* 若路径和文件存在，则读取并刷图下一张 */ /* 否则，从起始路径和文件名开始 */
         /* 保存新的路径和文件 */
         /* 休眠 */
+
+        /* 提供两个exe：一个用来乱序并且排序号，一个用来展示和拖拽图片，最后排序号  */
     }
     else
     {
@@ -85,15 +74,7 @@ int main(void)
                 if (flags & BTN_BIT_MODE_BASIC)
                 {
                     LOG_DBG("Basic mode selected");
-                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 192000);
-                    if (data_epd == NULL)
-                    {
-                        LOG_ERR("Failed to allocate memory for data_epd");
-                        continue;
-                    }
-                    bmp_decode_to_epd(bmp, data_epd, false);
-                    EPD_REFLUSH(epd_fill_image(data_epd));
-                    shared_multi_heap_free(data_epd);
+                    EPD_REFLUSH(test_bmp_play_pic());
                     LOG_DBG("Basic mode finished");
                 }
                 else if (flags & BTN_BIT_MODE_SERVER)
@@ -107,14 +88,14 @@ int main(void)
                     extern void http_server_stop(void);
                     extern void http_set_revc_buf(uint8_t *bmp_buf);
                     extern struct k_sem sem_http_data_uping;
-                    uint8_t *data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 1152054);
+                    uint8_t *data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, BMP_ORIGINAL_SIZE);
                     if (data_bmp == NULL)
                     {
                         LOG_ERR("Failed to allocate memory for data_bmp");
                         continue;
                     }
                     http_set_revc_buf(data_bmp);
-                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, 192000);
+                    uint8_t *data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_DATA_SIZE);
                     if (data_epd == NULL)
                     {
                         LOG_ERR("Failed to allocate memory for data_epd");
@@ -124,7 +105,7 @@ int main(void)
                     k_sem_take(&sem_http_data_uping, K_FOREVER);
                     k_sem_give(&sem_http_data_uping);
                     bmp_decode_to_epd(data_bmp, data_epd, true);
-                    EPD_REFLUSH(epd_fill_image(data_epd));
+                    EPD_REFLUSH(epd_show_image(data_epd));
 
                     shared_multi_heap_free(data_bmp);
                     shared_multi_heap_free(data_epd);
