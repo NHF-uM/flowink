@@ -50,13 +50,13 @@
 
 	spim3_default: spim3_default {
 		group1 {
-			pinmux = <SPIM3_MISO_GPIO18>,
+			pinmux = <SPIM3_CSEL_GPIO15>,
 				 <SPIM3_SCLK_GPIO16>,
-				 <SPIM3_CSEL_GPIO15>;
+				 <SPIM3_MISO_GPIO17>;
 		};
 
 		group2 {
-			pinmux = <SPIM3_MOSI_GPIO17>;
+			pinmux = <SPIM3_MOSI_GPIO18>;
 			output-low;
 		};
 	};
