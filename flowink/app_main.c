@@ -271,40 +271,36 @@ Disk mounted.
 
 */
 
-
-
-
-
 int tf_check_disk(const char *disk_name);
 
-int main(void)
+void tf_init(void)
 {
-
-    static const char *disk_pdrv = DISK_DRIVE_NAME;
-    static const char *disk_mount_pt = DISK_MOUNT_PT;
     int ret;
 
-    ret = tf_check_disk(disk_pdrv);
+    ret = tf_check_disk(DISK_DRIVE_NAME);
     if (ret != 0)
     {
         LOG_ERR("check disk failed");
-        return ret;
-    }
-    else
-    {
-        LOG_INF("check disk success");
+        return;
     }
 
-    sys_dlist_init(&dlist_dir);
-
-    mp.mnt_point = disk_mount_pt;
+    mp.mnt_point = DISK_MOUNT_PT;
     ret = fs_mount(&mp);
     if (ret != 0)
     {
-        printk("Error mounting disk, err:%d\n", ret);
-        return ret;
+        LOG_ERR("Error mounting disk, err:%d\n", ret);
+        return;
     }
-    printk("Disk mounted.\n");
+}
+
+int main(void)
+{
+    int ret;
+
+    tf_init();
+    static const char *disk_mount_pt = DISK_MOUNT_PT;
+
+    sys_dlist_init(&dlist_dir);
 
     uint16_t cnt = 0;
     struct fs_dir_t dirp;
@@ -314,7 +310,7 @@ int main(void)
     ret = fs_opendir(&dirp, disk_mount_pt);
     if (ret != 0)
     {
-        printk("Error opening root dir [%d]\n", ret);
+        LOG_ERR("Error opening root dir [%d]\n", ret);
         return ret;
     }
 
@@ -415,10 +411,10 @@ int main(void)
             LOG_DBG("[First-level FILE] %s (size = %zu)\n",
                     entry.name, entry.size);
 
-            if (file_endswith(entry.name, ".txt"))
+            if (file_endswith(entry.name, ".TXT"))
             {
             }
-            else if (file_endswith(entry.name, ".bmp"))
+            else if (file_endswith(entry.name, ".BMP"))
             {
                 struct ctx_file *ctx_file_root = k_malloc(sizeof(struct ctx_file));
                 if (ctx_file_root == NULL)
@@ -461,20 +457,20 @@ int tf_check_disk(const char *disk_name)
     if (disk_access_ioctl(disk_name, DISK_IOCTL_CTRL_INIT, NULL) != 0)
     {
         LOG_ERR("Storage init ERROR!");
-        return -EIO;
+        return -1;
     }
 
     if (disk_access_ioctl(disk_name, DISK_IOCTL_GET_SECTOR_COUNT, &block_count))
     {
         LOG_ERR("Unable to get sector count");
-        return -EIO;
+        return -1;
     }
     LOG_DBG("Block count %u", block_count);
 
     if (disk_access_ioctl(disk_name, DISK_IOCTL_GET_SECTOR_SIZE, &block_size))
     {
         LOG_ERR("Unable to get sector size");
-        return -EIO;
+        return -1;
     }
     LOG_DBG("Sector size %u\n", block_size);
 
@@ -485,8 +481,8 @@ int tf_check_disk(const char *disk_name)
                           DISK_IOCTL_CTRL_DEINIT, NULL) != 0)
     {
         LOG_ERR("Storage deinit ERROR!");
-        return -EIO;
+        return -1;
     }
-    
+
     return 0;
 }
