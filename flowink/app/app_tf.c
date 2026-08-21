@@ -4,6 +4,7 @@
 #include <ff.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/storage/disk_access.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 #include <zephyr/sys/dlist.h>
 #include <string.h>
 #include <stdlib.h>
@@ -45,15 +46,19 @@ struct ctx_file
     sys_dnode_t file_node;
 };
 
-struct carousel_info
+struct config_file_info
 {
     char *start_file_path;      /* 轮播开始文件 */
     uint32_t carousel_interval; /* 轮播间隔 */
+    uint16_t config_file_size;  /* 配置文件大小 */
     bool loop_play;             /* 文件夹内循环播放，默认开启 */
 };
 
 /* 文件夹全部放到一个 list 里面，根目录是头节点，每个 node 有一个 dlist_file*/
 static sys_dlist_t dlist_dir;
+struct config_file_info config_info = {
+    .loop_play = true,
+};
 
 /**
  * @brief 判断文件类型
@@ -248,6 +253,12 @@ static int scan_root_dir(struct ctx_dir *root_dir_ctx)
         {
             LOG_DBG("[TOP FILE] %s (size = %zu)", entry.name, entry.size);
 
+            if (file_endswith(entry.name, ".txt"))
+            {
+                config_info.config_file_size = entry.size;
+                continue;
+            }
+
             if (!file_endswith(entry.name, BMP_SUFFIX))
             {
                 continue;
@@ -283,7 +294,7 @@ void tf_init(void)
     }
 
     LOG_DBG("mount disk done");
-    
+
     sys_dlist_init(&dlist_dir);
 
     struct ctx_dir *ctx_dir_root = k_malloc(sizeof(struct ctx_dir));
@@ -313,11 +324,170 @@ void tf_deinit(void)
     LOG_DBG("umount disk done");
 }
 
-void tf_read_config_file(struct carousel_info *carousel_info)
+/**
+ * @brief 读取配置文件，注意：该文件的格式有严格要求，无需做过多校验；且避免系统发生崩溃即可，接受完全读取不到有效信息的情况
+ * 具体崩溃的点可能有：
+ *
+ * @param info
+ */
+void tf_read_config_file(struct config_file_info *info)
 {
+    int ret = 0;
+    struct fs_file_t fd;
+    char *file_buf = NULL;
+    size_t file_size = 0;
+    fs_file_t_init(&fd);
+
+    file_size = info->config_file_size;
+
+    /* 2. pasram分配，多留1字节放字符串结束符 */
+    file_buf = (char *)shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, file_size + 1);
+    if (file_buf == NULL)
+    {
+        LOG_WRN("pasram malloc for config file failed, size:%ld", (long)file_size + 1);
+        return;
+    }
+
+    /* 3. 打开文件读取全部内容到pasram */
+    ret = fs_open(&fd, CONFIG_FILE_PATH, FS_O_READ);
+    if (ret != 0)
+    {
+        LOG_WRN("fs_open config file err:%d", ret);
+        shared_multi_heap_free(file_buf);
+        return;
+    }
+
+    ret = fs_read(&fd, file_buf, file_size);
+    if (ret != (int)file_size)
+    {
+        LOG_WRN("fs_read config file err:%d", ret);
+        shared_multi_heap_free(file_buf);
+
+        if (ret >= 0)
+        {
+            fs_close(&fd);
+        }
+        return;
+    }
+
+    fs_close(&fd);
+    file_buf[file_size] = '\0'; /* 补字符串结束符 */
+
+    /* ========== 在整块内存上扫描解析 ========== */
+    char *p = file_buf;
+    while (*p != '\0')
+    {
+        // 1. 跳过注释行
+        if (*p == '#')
+        {
+            while (*p != '\0' && *p != '\r' && *p != '\n')
+                p++;
+            while (*p == '\r' || *p == '\n')
+                p++;
+            continue;
+        }
+
+        // 2. 临时截断当前行
+        char *line_end = p;
+        while (*line_end != '\0' && *line_end != '\r' && *line_end != '\n')
+            line_end++;
+
+        char save_ch = *line_end;
+        *line_end = '\0';
+
+        // 3. 解析 key="value"
+        char *eq_pos = strchr(p, '=');
+        if (eq_pos != NULL)
+        {
+            *eq_pos = '\0';
+            char *key = p;
+            char *value = eq_pos + 1;
+
+            char *quote_start = strchr(value, '"');
+            char *quote_end = (quote_start != NULL) ? strchr(quote_start + 1, '"') : NULL;
+            if (quote_start == NULL || quote_end == NULL)
+            {
+                *line_end = save_ch;
+                p = line_end;
+                while (*p == '\r' || *p == '\n')
+                    p++;
+                continue;
+            }
+            *quote_end = '\0';
+            value = quote_start + 1;
+
+            if (strcmp(key, "loop_interval") == 0)
+            {
+                info->carousel_interval = atoi(value);
+            }
+            else if (strcmp(key, "loop_subfolder") == 0)
+            {
+                if (strcmp(value, "1") == 0)
+                    info->loop_play = true;
+                else if (strcmp(value, "0") == 0)
+                    info->loop_play = false;
+                else
+                {
+                    LOG_WRN("loop_subfolder invalid val '%s', keep default true", value);
+                    info->loop_play = true;
+                }
+            }
+            else if (strcmp(key, "start_file_name") == 0)
+            {
+                if (info->start_file_path != NULL)
+                {
+                    k_free(info->start_file_path);
+                    info->start_file_path = NULL;
+                }
+
+                if (value[0] != '\0')
+                {
+                    size_t path_size = strlen(DISK_MOUNT_PT) + 1 + strlen(value) + 1;
+                    char *full_path = k_malloc(path_size);
+                    if (full_path != NULL)
+                        snprintf(full_path, path_size, "%s/%s", DISK_MOUNT_PT, value);
+                    else
+                        LOG_WRN("malloc start_file_path fail");
+
+                    info->start_file_path = full_path;
+                }
+                else
+                {
+                    info->start_file_path = NULL;
+                }
+            }
+        }
+
+        // 4. 恢复并跳到下一行
+        *line_end = save_ch;
+        p = line_end;
+        while (*p == '\r' || *p == '\n')
+            p++;
+    }
+
+    /* 解析完成释放pasram内存 */
+    shared_multi_heap_free(file_buf);
+    return;
 }
 
+static int tf_find_bmp_file(const char *file_path)
+{
+    sys_dnode_t node_root = sys_dlist_peek_head(&dlist_dir);
+    
+    while (1)
+    {
+
+    }
+}
+
+/* 重新上电之后读取只会读取配置文件并且刷图 */
 /* 传入当前文件路径，读取下一张bmp文件到bmp_buf*/
 void tf_read_bmp_file(const char *file_path_current, uint8_t *bmp_buf)
 {
+    /* 遍历所有文件夹链表的所有文件链表节点的所有文件，找出 current 文件 */
+    /* */
+    while (1)
+    {
+
+    }
 }
