@@ -175,13 +175,28 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 //     return -1;
 // }
 
+/*
+[00:00:08.314,000] <inf> sd: Maximum SD clock is under 25MHz, using clock of 24000000Hz
+[00:00:08.317,000] <dbg> app_tf: tf_init: mount disk done
+[00:00:08.318,000] <dbg> app_tf: scan_root_dir: [TOP DIR] System Volume Information
+[00:00:08.319,000] <dbg> app_tf: scan_root_dir: [TOP DIR] bbb
+[00:00:08.320,000] <dbg> app_tf: scan_sub_dir: [SUB FILE] 15c3d.bmp (size = 1152054)
+[00:00:08.320,000] <dbg> app_tf: scan_sub_dir: [SUB FILE] 45ff.bmp (size = 1152054)
+[00:00:08.320,000] <dbg> app_tf: scan_sub_dir: [SUB FILE] 824.bmp (size = 1152054)
+[00:00:08.321,000] <dbg> app_tf: scan_root_dir: [TOP FILE] 800.bmp (size = 1152054)
+[00:00:08.321,000] <dbg> app_tf: scan_root_dir: [TOP FILE] eeb.bmp (size = 1152054)
+[00:00:08.321,000] <dbg> app_tf: scan_root_dir: [TOP FILE] config.txt (size = 1319)
+[00:00:08.321,000] <dbg> app_tf: scan_root_dir: [TOP FILE] 1b5.bmp (size = 1152054)
+[00:00:08.321,000] <dbg> app_tf: tf_deinit: umount disk done
+*/
+
 /**
  * 项目规范：
  * 1. 工具函数有返回值，顶层init函数无返回值 
  * 
  * 
 */
-
+#include "app_tf.h"
 /* tf卡的读取顺序是没有规则的，会因文件的改动而变化，所以只能用py来指定？*/
 int main(void)
 {

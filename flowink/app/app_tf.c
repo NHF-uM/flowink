@@ -180,14 +180,8 @@ static int scan_sub_dir(struct ctx_dir *sub_dir_ctx)
         }
 
         /* 忽略子目录，不再继续深入 */
-        if (entry_sub.type != FS_DIR_ENTRY_FILE)
+        if (entry_sub.type != FS_DIR_ENTRY_FILE || (!file_endswith(entry_sub.name, BMP_SUFFIX)))
         {
-            continue;
-        }
-
-        if (!file_endswith(entry_sub.name, BMP_SUFFIX))
-        {
-            LOG_WRN("invalid file extension: %s", entry_sub.name);
             continue;
         }
 
@@ -256,7 +250,6 @@ static int scan_root_dir(struct ctx_dir *root_dir_ctx)
 
             if (!file_endswith(entry.name, BMP_SUFFIX))
             {
-                LOG_WRN("invalid file extension: %s", entry.name);
                 continue;
             }
 
@@ -289,6 +282,8 @@ void tf_init(void)
         return;
     }
 
+    LOG_DBG("mount disk done");
+    
     sys_dlist_init(&dlist_dir);
 
     struct ctx_dir *ctx_dir_root = k_malloc(sizeof(struct ctx_dir));
@@ -314,6 +309,8 @@ void tf_deinit(void)
     {
         LOG_ERR("Error unmounting disk, err:%d\n", ret);
     }
+
+    LOG_DBG("umount disk done");
 }
 
 void tf_read_config_file(struct carousel_info *carousel_info)
