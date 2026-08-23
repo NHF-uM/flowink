@@ -3,12 +3,6 @@
 
 menu "WS2812 Sample Configuration"
 
-config SAMPLE_LED_UPDATE_DELAY
-	int "Delay between LED updates in ms"
-	default 50
-	help
-	  Delay between LED updates in ms.
-
 config SAMPLE_LED_BRIGHTNESS
 	int "LED brightness"
 	default 3
@@ -16,6 +10,34 @@ config SAMPLE_LED_BRIGHTNESS
 	help
 	  Brightness level of each LED. Defaults to a low value to make
 	  it easier to distinguish colors.
+
+endmenu
+
+menu "EPD Configuration"
+
+config EPD_WIDTH
+	int "EPD width"
+	default 800
+	help
+	  Width of the EPD display in pixels.
+
+config EPD_HEIGHT
+	int "EPD height"
+	default 480
+	help
+	  Height of the EPD display in pixels.
+
+config EPD_SEND_BUF_SIZE
+	int "EPD send buffer size"
+	default 192000
+	help
+	  Size of the buffer used to send data to the EPD display.
+
+config BMP_ORIGINAL_SIZE
+	int "BMP original size"
+	default 1152054
+	help
+	  The original size of the BMP file.
 
 endmenu
 

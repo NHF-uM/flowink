@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "app_tf.h"
 
 LOG_MODULE_REGISTER(app_tf, LOG_LEVEL_DBG);
 
@@ -470,24 +471,135 @@ void tf_read_config_file(struct config_file_info *info)
     return;
 }
 
-static int tf_find_bmp_file(const char *file_path)
+static struct ctx_file *find_bmp_file(const char *file_path, struct ctx_dir **out_dir)
 {
-    sys_dnode_t node_root = sys_dlist_peek_head(&dlist_dir);
-    
-    while (1)
-    {
+    struct ctx_dir *dir_ctx = NULL;
+    struct ctx_file *file_ctx = NULL;
 
+    SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
+    {
+        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
+        {
+            if (strcmp(file_ctx->file_path, file_path) == 0)
+            {
+                if (out_dir != NULL)
+                {
+                    *out_dir = dir_ctx;
+                }
+                return file_ctx;
+            }
+        }
     }
+    return NULL;
 }
 
-/* 重新上电之后读取只会读取配置文件并且刷图 */
-/* 传入当前文件路径，读取下一张bmp文件到bmp_buf*/
-void tf_read_bmp_file(const char *file_path_current, uint8_t *bmp_buf)
+static struct ctx_file *find_first_bmp_file(void)
 {
-    /* 遍历所有文件夹链表的所有文件链表节点的所有文件，找出 current 文件 */
-    /* */
-    while (1)
+    struct ctx_dir *dir_ctx = NULL;
+    struct ctx_file *file_ctx = NULL;
+    SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
     {
-
+        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
+        {
+            return file_ctx;
+        }
     }
+
+    return NULL;
+}
+
+int tf_read_bmp(const char *file_path, uint8_t **bmp_buf)
+{
+    struct fs_file_t fd;
+    fs_file_t_init(&fd);
+
+    int ret = fs_open(&fd, file_path, FS_O_READ);
+    if (ret != 0)
+    {
+        LOG_ERR("Failed to open BMP file: %s, err:%d", file_path, ret);
+        return -1;
+    }
+
+    ret = fs_read(&fd, *bmp_buf, CONFIG_BMP_ORIGINAL_SIZE);
+    fs_close(&fd);
+    if (ret < 0)
+    {
+        LOG_ERR("read bmp %s fail ret=%d", file_path, ret);
+    }
+    return ret;
+}
+
+/* 传入当前文件路径，读取下一张bmp文件到bmp_buf
+ * 如果loop_play=true：当前目录链表内循环播放；
+ * 如果loop_play=false：播完当前目录全部文件，切下一目录，全部目录遍历完回到第一个文件
+ */
+char *tf_find_next_bmp(const char *file_path, uint8_t *bmp_buf)
+{
+    struct ctx_dir *dir_ctx = NULL;
+    struct ctx_file *file_ctx = find_bmp_file(file_path, &dir_ctx);
+
+    if (file_ctx == NULL)
+    {
+        LOG_WRN("current file not found in list: %s", file_path);
+        return NULL;
+        /* 要告诉main，用户修改过tf卡，重头开始播放（进入模式1） */
+    }
+
+    sys_dnode_t *node_file = sys_dlist_peek_next(&dir_ctx->dlist_file, &file_ctx->file_node);
+
+    if (node_file == NULL) /* 当前目录播完，处理跨目录 */
+    {
+        LOG_DBG("Reached end of list, looping back to start");
+
+        if (!config_info.loop_play)
+        {
+            /* 找到当前目录在 dlist_dir 中的位置 */
+            struct ctx_dir *cur = NULL;
+            bool found = false;
+            SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, cur, dir_node)
+            {
+                if (cur == dir_ctx)
+                {
+                    // !!!!
+                    break;
+                }
+            }
+
+            struct ctx_dir *next_dir = NULL;
+            if (found)
+            {
+                next_dir = SYS_DLIST_PEEK_NEXT_CONTAINER(&dlist_dir, cur, dir_node);
+            }
+
+            if (next_dir != NULL)
+            {
+                /* 播下一个目录的第一张 */
+                file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&next_dir->dlist_file, file_ctx, file_node);
+            }
+            else
+            {
+                /* 全部目录播完，回到全局第一张 */
+                file_ctx = find_first_bmp_file();
+            }
+        }
+        else
+        {
+            /* 从当前目录头部循环 */
+            file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node);
+        }
+    }
+    else
+    {
+        /* 继续播放当前目录的下一张 */
+        file_ctx = CONTAINER_OF(node_file, struct ctx_file, file_node);
+    }
+
+    if (file_ctx == NULL)
+    {
+        LOG_WRN("no next bmp available");
+        return NULL;
+    }
+
+    LOG_DBG("Next BMP file: %s", file_ctx->file_path);
+    return file_ctx->file_path;
 }
