@@ -23,6 +23,7 @@ static FATFS fat_fs;
 /**
  * TF 模块规范：
  * 1. 芯片整个执行流程不会释放、修改、删除链表节点（链表节点顺序和fat系统读取顺序一致）
+ * 2. 只有根目录是肯定被创建的，其他目录节点是动态创建的
  *
  */
 static struct fs_mount_t mp = {
@@ -49,7 +50,6 @@ struct ctx_file
 
 struct config_file_info
 {
-    char *start_file_path;      /* 轮播开始文件 */
     uint32_t carousel_interval; /* 轮播间隔 */
     uint16_t config_file_size;  /* 配置文件大小 */
     bool loop_play;             /* 文件夹内循环播放，默认开启 */
@@ -59,12 +59,14 @@ struct config_file_info
 static sys_dlist_t dlist_dir;
 struct config_file_info config_info = {
     .loop_play = true,
+    .config_file_size = 0,
+    .carousel_interval = 0,
 };
 
 /**
  * @brief 判断文件类型
  * @param str 原始字符串，内部转为小写再和后缀进行比较
- * @param suffix 后缀（例如 ".txt"）
+ * @param suffix 后缀（例如 ".bmp"）
  * @return true:匹配
  */
 static bool file_endswith(const char *str, const char *suffix)
@@ -154,8 +156,10 @@ static int tf_check_disk(const char *disk_name)
     if (disk_access_ioctl(disk_name, DISK_IOCTL_CTRL_DEINIT, NULL) != 0)
     {
         LOG_ERR("Storage deinit ERROR!");
-        return 0;
+        return -1;
     }
+
+    return 0;
 }
 
 /**
@@ -254,7 +258,7 @@ static int scan_root_dir(struct ctx_dir *root_dir_ctx)
         {
             LOG_DBG("[TOP FILE] %s (size = %zu)", entry.name, entry.size);
 
-            if (file_endswith(entry.name, ".txt"))
+            if (strcmp(entry.name, "config.txt") == 0)
             {
                 config_info.config_file_size = entry.size;
                 continue;
@@ -273,6 +277,32 @@ static int scan_root_dir(struct ctx_dir *root_dir_ctx)
 
     fs_closedir(&dirp);
     return 0;
+}
+
+/**
+ * @brief 根据路径查找文件，返回 文件夹上下文 和 文件上下文信息
+ */
+static void find_bmp_file(const char *file_path, struct ctx_dir **out_dir, struct ctx_file **out_file)
+{
+    struct ctx_dir *dir_ctx = NULL;
+    struct ctx_file *file_ctx = NULL;
+
+    SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
+    {
+        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
+        {
+            if (strcmp(file_ctx->file_path, file_path) == 0)
+            {
+                *out_dir = dir_ctx;
+                *out_file = file_ctx;
+                return;
+            }
+        }
+    }
+
+    *out_dir = NULL;
+    *out_file = NULL;
+    return;
 }
 
 void tf_init(void)
@@ -329,24 +359,29 @@ void tf_deinit(void)
  * @brief 读取配置文件，注意：该文件的格式有严格要求，无需做过多校验；且避免系统发生崩溃即可，接受完全读取不到有效信息的情况
  * 具体崩溃的点可能有：
  *
- * @param info
+ * @return char* 起始文件，读取失败时返回 NULL
  */
-void tf_read_config_file(struct config_file_info *info)
+char *tf_read_config_file(void)
 {
     int ret = 0;
     struct fs_file_t fd;
-    char *file_buf = NULL;
     size_t file_size = 0;
     fs_file_t_init(&fd);
 
-    file_size = info->config_file_size;
+    /* 没有 entry--config.txt */
+    file_size = config_info.config_file_size;
+    if (file_size == 0)
+    {
+        LOG_WRN("config file size is 0, skip read");
+        return NULL;
+    }
 
     /* 2. pasram分配，多留1字节放字符串结束符 */
-    file_buf = (char *)shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, file_size + 1);
+    char *file_buf = (char *)shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, file_size + 1);
     if (file_buf == NULL)
     {
         LOG_WRN("pasram malloc for config file failed, size:%ld", (long)file_size + 1);
-        return;
+        return NULL;
     }
 
     /* 3. 打开文件读取全部内容到pasram */
@@ -355,7 +390,7 @@ void tf_read_config_file(struct config_file_info *info)
     {
         LOG_WRN("fs_open config file err:%d", ret);
         shared_multi_heap_free(file_buf);
-        return;
+        return NULL;
     }
 
     ret = fs_read(&fd, file_buf, file_size);
@@ -363,12 +398,8 @@ void tf_read_config_file(struct config_file_info *info)
     {
         LOG_WRN("fs_read config file err:%d", ret);
         shared_multi_heap_free(file_buf);
-
-        if (ret >= 0)
-        {
-            fs_close(&fd);
-        }
-        return;
+        fs_close(&fd);
+        return NULL;
     }
 
     fs_close(&fd);
@@ -419,28 +450,22 @@ void tf_read_config_file(struct config_file_info *info)
 
             if (strcmp(key, "loop_interval") == 0)
             {
-                info->carousel_interval = atoi(value);
+                config_info.carousel_interval = atoi(value);
             }
             else if (strcmp(key, "loop_subfolder") == 0)
             {
                 if (strcmp(value, "1") == 0)
-                    info->loop_play = true;
+                    config_info.loop_play = true;
                 else if (strcmp(value, "0") == 0)
-                    info->loop_play = false;
+                    config_info.loop_play = false;
                 else
                 {
                     LOG_WRN("loop_subfolder invalid val '%s', keep default true", value);
-                    info->loop_play = true;
+                    config_info.loop_play = true;
                 }
             }
             else if (strcmp(key, "start_file_name") == 0)
             {
-                if (info->start_file_path != NULL)
-                {
-                    k_free(info->start_file_path);
-                    info->start_file_path = NULL;
-                }
-
                 if (value[0] != '\0')
                 {
                     size_t path_size = strlen(DISK_MOUNT_PT) + 1 + strlen(value) + 1;
@@ -450,11 +475,11 @@ void tf_read_config_file(struct config_file_info *info)
                     else
                         LOG_WRN("malloc start_file_path fail");
 
-                    info->start_file_path = full_path;
+                    return full_path;
                 }
                 else
                 {
-                    info->start_file_path = NULL;
+                    return NULL;
                 }
             }
         }
@@ -468,40 +493,25 @@ void tf_read_config_file(struct config_file_info *info)
 
     /* 解析完成释放pasram内存 */
     shared_multi_heap_free(file_buf);
-    return;
-}
-
-static struct ctx_file *find_bmp_file(const char *file_path, struct ctx_dir **out_dir)
-{
-    struct ctx_dir *dir_ctx = NULL;
-    struct ctx_file *file_ctx = NULL;
-
-    SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
-    {
-        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
-        {
-            if (strcmp(file_ctx->file_path, file_path) == 0)
-            {
-                if (out_dir != NULL)
-                {
-                    *out_dir = dir_ctx;
-                }
-                return file_ctx;
-            }
-        }
-    }
     return NULL;
 }
 
-static struct ctx_file *find_first_bmp_file(void)
+/**
+ * @brief
+ * @param
+ * @return
+ */
+char *tf_find_first_bmp(void)
 {
     struct ctx_dir *dir_ctx = NULL;
     struct ctx_file *file_ctx = NULL;
+
     SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
     {
-        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
+        file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node);
+        if (file_ctx != NULL) /* 下一个目录有图片才能返回 */
         {
-            return file_ctx;
+            return file_ctx->file_path;
         }
     }
 
@@ -526,6 +536,7 @@ int tf_read_bmp(const char *file_path, uint8_t **bmp_buf)
     {
         LOG_ERR("read bmp %s fail ret=%d", file_path, ret);
     }
+
     return ret;
 }
 
@@ -533,10 +544,11 @@ int tf_read_bmp(const char *file_path, uint8_t **bmp_buf)
  * 如果loop_play=true：当前目录链表内循环播放；
  * 如果loop_play=false：播完当前目录全部文件，切下一目录，全部目录遍历完回到第一个文件
  */
-char *tf_find_next_bmp(const char *file_path, uint8_t *bmp_buf)
+char *tf_find_next_bmp(const char *file_path)
 {
     struct ctx_dir *dir_ctx = NULL;
-    struct ctx_file *file_ctx = find_bmp_file(file_path, &dir_ctx);
+    struct ctx_file *file_ctx = NULL;
+    find_bmp_file(file_path, &dir_ctx, &file_ctx);
 
     if (file_ctx == NULL)
     {
@@ -547,39 +559,38 @@ char *tf_find_next_bmp(const char *file_path, uint8_t *bmp_buf)
 
     sys_dnode_t *node_file = sys_dlist_peek_next(&dir_ctx->dlist_file, &file_ctx->file_node);
 
-    if (node_file == NULL) /* 当前目录播完，处理跨目录 */
+    if (node_file == NULL) /* 当前目录播完 */
     {
         LOG_DBG("Reached end of list, looping back to start");
 
         if (!config_info.loop_play)
         {
-            /* 找到当前目录在 dlist_dir 中的位置 */
-            struct ctx_dir *cur = NULL;
-            bool found = false;
-            SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, cur, dir_node)
+            struct ctx_dir *next_dir = NULL;
+
+            while (1)
             {
-                if (cur == dir_ctx)
+                dir_ctx = SYS_DLIST_PEEK_NEXT_CONTAINER(&dlist_dir, dir_ctx, dir_node);
+
+                if (dir_ctx == NULL)
                 {
-                    // !!!!
+                    /* 全部目录遍历完，重头开始播放（进入模式1），暴露find_first的接口，让上层决定 */
+                    /**
+                     * 
+                     * 
+                     * 
+                     * 
+                     * 
+                     */
+                     break;
+                }
+
+                /* 还有目录，但是要跳过没有空目录 */
+                file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node);
+                if (file_ctx != NULL)
+                {
+                    /* 当前目录有图片，取第一个 */
                     break;
                 }
-            }
-
-            struct ctx_dir *next_dir = NULL;
-            if (found)
-            {
-                next_dir = SYS_DLIST_PEEK_NEXT_CONTAINER(&dlist_dir, cur, dir_node);
-            }
-
-            if (next_dir != NULL)
-            {
-                /* 播下一个目录的第一张 */
-                file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&next_dir->dlist_file, file_ctx, file_node);
-            }
-            else
-            {
-                /* 全部目录播完，回到全局第一张 */
-                file_ctx = find_first_bmp_file();
             }
         }
         else
@@ -602,4 +613,19 @@ char *tf_find_next_bmp(const char *file_path, uint8_t *bmp_buf)
 
     LOG_DBG("Next BMP file: %s", file_ctx->file_path);
     return file_ctx->file_path;
+}
+
+void tf_test_ls_dlist(void)
+{
+    struct ctx_dir *dir_ctx = NULL;
+    struct ctx_file *file_ctx = NULL;
+
+    SYS_DLIST_FOR_EACH_CONTAINER(&dlist_dir, dir_ctx, dir_node)
+    {
+        LOG_DBG("dir: %s with %d files", dir_ctx->dir_path, dir_ctx->file_num);
+        SYS_DLIST_FOR_EACH_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node)
+        {
+            LOG_DBG("file: %s", file_ctx->file_path);
+        }
+    }
 }

@@ -30,6 +30,18 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 int main(void)
 {
     tf_init();
+
+    tf_test_ls_dlist();
+    
+    char *file_name = tf_read_config_file();
+    LOG_INF("start file_name: %s", file_name);
+
+    char *file_path = tf_find_first_bmp();
+    LOG_INF("first file_path: %s", file_path);
+
+    char *next_bmp_path = tf_find_next_bmp(file_path);
+    LOG_INF("next file_path: %s", next_bmp_path);
+
     tf_deinit();
     return 0;
 }
