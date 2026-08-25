@@ -2,14 +2,15 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/retained_mem.h>
 #include <zephyr/logging/log.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(app_nv, LOG_LEVEL_DBG);
 
-#define RETAIN_MAGIC 0xA55AA55AU /* 魔幻数，默认是有符号数，后面加 'U' 能防止一些情况下出错 */
+#define RETAIN_MAGIC 0xA55AA55AU
 #define RETAIN_OFFSET_MAGIC 0
 #define RETAIN_OFFSET_PATH 4
 
-static char path[128];
+static char path[128];  /* 128 字节的路径缓冲区，读取和写入要完整，在路径结束和缓冲区末尾有'\0' */
 
 static const struct device *retained_mem_device = DEVICE_DT_GET(DT_NODELABEL(retained_mem0));
 
@@ -18,7 +19,7 @@ char *nv_read_path(void)
     if (!device_is_ready(retained_mem_device))
     {
         LOG_DBG("retained_mem device is not ready!\n");
-        return;
+        return NULL;
     }
 
     uint32_t magic = 0;
@@ -29,10 +30,9 @@ char *nv_read_path(void)
         goto init_retained;
     }
 
-    // 魔法校验失败
     if (magic != RETAIN_MAGIC)
     {
-    init_retained:
+init_retained:
         magic = RETAIN_MAGIC;
         err = retained_mem_write(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)&magic, sizeof(magic));
         if (err != 0)
@@ -58,26 +58,55 @@ char *nv_read_path(void)
         return NULL;
     }
 
-    path[127] = '\0';
+    size_t valid_len = strnlen(path, sizeof(path));
+    if (valid_len < sizeof(path))
+    {
+        path[valid_len] = '\0';
+    }
+    else
+    {
+        /* 整个缓冲区都没有'\0' */
+        path[sizeof(path) - 1] = '\0';
+    }
 
     LOG_DBG("nv retained path: %s\n", path);
     return path;
 }
 
-int nv_write_path(const char *path)
+void nv_write_path(const char *path_buf)
 {
     if (!device_is_ready(retained_mem_device))
     {
         LOG_DBG("retained_mem device is not ready!\n");
-        return -1;
+        return;
     }
 
-    int err = retained_mem_write(retained_mem_device, RETAIN_OFFSET_PATH, (uint8_t *)path, sizeof(path));
-    if (err != 0)
+    if (path_buf == NULL)
     {
-        LOG_DBG("retained_mem write path failed!\n");
-        return -1;
+        LOG_WRN("path_buf is NULL!\n");
+        return;
     }
 
-    return 0;
+    strncpy(path, path_buf, sizeof(path) - 1);
+    path[sizeof(path) - 1] = '\0';
+
+    if (retained_mem_write(retained_mem_device, RETAIN_OFFSET_PATH, (uint8_t *)path, sizeof(path)))
+    {
+        LOG_WRN("retained_mem write path failed!\n");
+    }
+}
+
+void nv_break_magic(void)
+{
+    if (!device_is_ready(retained_mem_device))
+    {
+        LOG_DBG("retained_mem device is not ready!\n");
+        return;
+    }
+
+    uint32_t magic = 0;
+    if (retained_mem_write(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)&magic, sizeof(magic)))
+    {
+        LOG_WRN("retained_mem write magic failed!\n");
+    }
 }

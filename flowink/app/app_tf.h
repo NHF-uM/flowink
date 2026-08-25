@@ -15,14 +15,6 @@ int tf_init(bool disk_check_enable);
 void tf_deinit(void);
 
 /**
- * @brief 读取 TF 卡配置文件，填充内部全局信息结构体
- * 注意：需要提前挂载 TF 卡
- * @param  无
- * @return 起始播放文件路径，返回 NULL 表示读取错误
- */
-char *tf_read_config_file(void);
-
-/**
  * @brief 寻找 TF 卡下第一个 BMP 文件
  * @param  无
  * @return 文件路径，返回 NULL 整个卡没有可用 BMP 文件
@@ -33,9 +25,9 @@ char *tf_find_first_bmp(void);
  * @brief 读取 TF 卡 BMP 文件
  * @param file_path 文件路径
  * @param bmp_buf BMP 文件缓冲区
- * @return 实际读取文件大小
+ * @return 0 成功
  */
-int tf_read_bmp(const char *file_path, uint8_t **bmp_buf);
+int tf_read_bmp(const char *file_path, uint8_t *bmp_buf);
 
 /**
  * @brief 定位下一张图片，返回完整路径
@@ -47,18 +39,25 @@ int tf_read_bmp(const char *file_path, uint8_t **bmp_buf);
 char *tf_find_next_bmp(const char *current_file_path);
 
 /**
- * @brief 获取循环播放开关状态
+ * @brief 获取配置文件循环播放开关状态
  * @param  无
  * @return config_info->loop_play
  */
 bool tf_get_loop_play(void);
 
 /**
- * @brief 获取轮播间隔
+ * @brief 获取配置文件轮播间隔
  * @param  无
  * @return config_info->carousel_interval
  */
 uint32_t tf_get_carousel_interval(void);
+
+/**
+ * @brief 获取配置文件起始路径
+ * @param  无
+ * @return config_info->start_file_path
+ */
+char *tf_get_start_file_path(void);
 
 /**
  * @brief 测试——打印 dlist 目录结构

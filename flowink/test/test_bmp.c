@@ -17,13 +17,13 @@ void test_bmp(void)
     epd_init();
     k_sleep(K_SECONDS(1));
 
-    uint8_t *bmp_decoded = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_DATA_SIZE);
+    uint8_t *bmp_decoded = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
     if (bmp_decoded == NULL)
     {
         LOG_ERR("Failed to allocate memory for bmp_decoded");
         return;
     }
-    memset(bmp_decoded, 0xFF, EPD_DATA_SIZE);
+    memset(bmp_decoded, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
 
     bmp_decode_to_epd(bmp, bmp_decoded, false);
 
@@ -56,13 +56,13 @@ void test_bmp(void)
 
 void test_bmp_play_pic(void)
 {   
-    uint8_t *bmp_decoded = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_DATA_SIZE);
+    uint8_t *bmp_decoded = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
     if (bmp_decoded == NULL)
     {
         LOG_ERR("Failed to allocate memory for bmp_decoded");
         return;
     }
-    memset(bmp_decoded, 0xFF, EPD_DATA_SIZE);
+    memset(bmp_decoded, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
 
     bmp_decode_to_epd(bmp, bmp_decoded, false);
 

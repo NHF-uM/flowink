@@ -35,7 +35,7 @@ int bmp_decode_to_epd(const uint8_t *bmp_buf, uint8_t *epd_buf, bool rotate_180)
     if (!res_ok)
     {
         LOG_ERR("unsupported resolution, w=%u h=%u, only support 800x480/480x800", ih->biWidth, ih->biHeight);
-        return false;
+        return -1;
     }
 
     uint32_t width = ih->biWidth;

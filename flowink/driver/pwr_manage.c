@@ -44,16 +44,13 @@ void pwr_init(void)
 {
     pwr_update_wakeup_cause();
 
+    
+
     if (!gpio_is_ready_dt(&btn_wakeup_spec))
     {
         LOG_ERR("btn_wakeup pin not ready \n");
         return;
     }
-
-    // if (!device_is_ready(retained_mem_device)) {
-    // 	LOG_ERR("retained_mem device is not ready!\n");
-    // 	return 0;
-    // }
 
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入和中断触发 */
     int ret = gpio_pin_configure_dt(&btn_wakeup_spec, GPIO_INPUT);

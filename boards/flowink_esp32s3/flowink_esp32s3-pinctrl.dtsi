@@ -56,7 +56,8 @@
 
 		group2 {
 			pinmux = <SPIM3_MOSI_GPIO18>;
-		}output-low;
+			output-low;
+		};
 	};
 	
 	spim2_default: spim2_default {

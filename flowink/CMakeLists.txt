@@ -7,12 +7,24 @@ find_package(Python REQUIRED COMPONENTS Interpreter)
 
 project(flowink)
 
+zephyr_get(CONFIG_APP_ENABLE_TEST)
+if(NOT DEFINED CONFIG_APP_ENABLE_TEST)
+    set(CONFIG_APP_ENABLE_TEST OFF CACHE BOOL "Enable compile test folder code")
+endif()
+
+#=====修复点1：先收集源文件，不要提前调用target_sources=====
 FILE(GLOB app_sources 
     app/*.c
     app/net/*.c
     driver/*.c
-    server/*.c  
-    test/*.c)
+    server/*.c
+)
+
+if(CONFIG_APP_ENABLE_TEST)
+    FILE(GLOB test_sources test/*.c)
+    list(APPEND app_sources ${test_sources})
+endif()
+
 target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
@@ -20,8 +32,11 @@ target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/app/net
     ${CMAKE_CURRENT_SOURCE_DIR}/driver
     ${CMAKE_CURRENT_SOURCE_DIR}/server
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
 )
+
+if(CONFIG_APP_ENABLE_TEST)
+    target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test)
+endif()
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
@@ -48,7 +63,7 @@ foreach(file ${WEB_FILES})
 generate_inc_file_for_target(app
     ${read_dir}/${file}
     ${gen_dir}/${file}.gz.inc
-    --gzip                
+    --gzip
 )
 endforeach()
 
@@ -57,8 +72,11 @@ generate_inc_file_for_target(app
     ${gen_dir}/zkk.png.inc
 )
 
-set(read_dir_test ${CMAKE_CURRENT_SOURCE_DIR}/test/bmp_source/)
-generate_inc_file_for_target(app
-    ${read_dir_test}/test.bmp
-    ${gen_dir}/test.bmp.inc
-)
+if(CONFIG_APP_ENABLE_TEST)
+    set(read_dir_test ${CMAKE_CURRENT_SOURCE_DIR}/test/bmp_source/)
+
+    generate_inc_file_for_target(app
+        ${read_dir_test}/test.bmp
+        ${gen_dir}/test.bmp.inc
+    )
+endif()

@@ -51,14 +51,15 @@ struct ctx_file
 struct config_file_info
 {
     uint32_t carousel_interval; /* 轮播间隔 */
+    char *start_file_path; /* 默认为 NULL，malloc 后不再释放 */
     uint16_t config_file_size;  /* 配置文件大小 */
-    bool loop_play;             /* 文件夹内循环播放，默认开启 */
+    bool loop_play;             /* 文件夹内循环播放，默认关闭 */
 };
 
 
 static sys_dlist_t dlist_dir;
 struct config_file_info config_info = {
-    .loop_play = true,
+    .loop_play = false,
     .config_file_size = 0,
     .carousel_interval = 0,
 };
@@ -237,7 +238,7 @@ static int scan_root_dir(struct ctx_dir *root_dir_ctx)
 
         if (entry.type == FS_DIR_ENTRY_DIR) /* 根目录下的文件夹 */
         {
-            if (strstr(entry.name, "System Volume Information") != 0)
+            if (strstr(entry.name, "System Volume Information") != NULL)
             {
                 continue;
             }
@@ -310,66 +311,11 @@ static void find_bmp_file(const char *file_path, struct ctx_dir **out_dir, struc
     return;
 }
 
-int tf_init(bool disk_check_enable)
-{
-    int ret;
-
-    if (disk_check_enable)
-    {
-        ret = tf_check_disk(DISK_DRIVE_NAME);
-        if (ret != 0)
-        {
-            LOG_ERR("check disk failed");
-            return -1;
-        }
-    }
-
-    mp.mnt_point = DISK_MOUNT_PT;
-    ret = fs_mount(&mp);
-    if (ret != 0)
-    {
-        LOG_ERR("Error mounting disk, err:%d\n", ret);
-        return -1;
-    }
-
-    LOG_DBG("mount disk done");
-
-    sys_dlist_init(&dlist_dir);
-
-    struct ctx_dir *ctx_dir_root = k_malloc(sizeof(struct ctx_dir));
-    if (ctx_dir_root == NULL)
-    {
-        LOG_ERR("k_malloc root dir failed");
-        fs_unmount(&mp);
-        return -1;
-    }
-
-    snprintf(ctx_dir_root->dir_path, sizeof(ctx_dir_root->dir_path), "%s", DISK_MOUNT_PT);
-    sys_dlist_init(&ctx_dir_root->dlist_file);
-    ctx_dir_root->file_num = 0;
-    sys_dlist_append(&dlist_dir, &ctx_dir_root->dir_node);
-
-    scan_root_dir(ctx_dir_root);
-}
-
-void tf_deinit(void)
-{
-    int ret = fs_unmount(&mp);
-    if (ret != 0)
-    {
-        LOG_ERR("Error unmounting disk, err:%d\n", ret);
-    }
-
-    LOG_DBG("umount disk done");
-}
-
 /**
  * @brief 读取配置文件，注意：该文件的格式有严格要求，无需做过多校验；且避免系统发生崩溃即可，接受完全读取不到有效信息的情况
- * 具体崩溃的点可能有：
  *
- * @return char* 起始文件，读取失败时返回 NULL
  */
-char *tf_read_config_file(void)
+static void tf_read_config_file(void)
 {
     int ret = 0;
     struct fs_file_t fd;
@@ -381,7 +327,7 @@ char *tf_read_config_file(void)
     if (file_size == 0)
     {
         LOG_WRN("config file size is 0, skip read");
-        return NULL;
+        return;
     }
 
     /* 2. pasram分配，多留1字节放字符串结束符 */
@@ -389,7 +335,7 @@ char *tf_read_config_file(void)
     if (file_buf == NULL)
     {
         LOG_WRN("pasram malloc for config file failed, size:%ld", (long)file_size + 1);
-        return NULL;
+        return;
     }
 
     /* 3. 打开文件读取全部内容到pasram */
@@ -398,7 +344,7 @@ char *tf_read_config_file(void)
     {
         LOG_WRN("fs_open config file err:%d", ret);
         shared_multi_heap_free(file_buf);
-        return NULL;
+        return;
     }
 
     ret = fs_read(&fd, file_buf, file_size);
@@ -407,7 +353,7 @@ char *tf_read_config_file(void)
         LOG_WRN("fs_read config file err:%d", ret);
         shared_multi_heap_free(file_buf);
         fs_close(&fd);
-        return NULL;
+        return;
     }
 
     fs_close(&fd);
@@ -469,7 +415,7 @@ char *tf_read_config_file(void)
                 else
                 {
                     LOG_WRN("loop_subfolder invalid val '%s', keep default true", value);
-                    config_info.loop_play = true;
+                    config_info.loop_play = false;
                 }
             }
             else if (strcmp(key, "start_file_name") == 0)
@@ -483,13 +429,11 @@ char *tf_read_config_file(void)
                     else
                         LOG_WRN("malloc start_file_path fail");
 
-                    shared_multi_heap_free(file_buf);
-                    return full_path;
+                    config_info.start_file_path = full_path;
                 }
                 else
                 {
-                    shared_multi_heap_free(file_buf);
-                    return NULL;
+                    config_info.start_file_path = NULL;
                 }
             }
         }
@@ -503,7 +447,64 @@ char *tf_read_config_file(void)
 
     /* 解析完成释放pasram内存 */
     shared_multi_heap_free(file_buf);
-    return NULL;
+    return;
+}
+
+int tf_init(bool disk_check_enable)
+{
+    int ret;
+
+    if (disk_check_enable)
+    {
+        ret = tf_check_disk(DISK_DRIVE_NAME);
+        if (ret != 0)
+        {
+            LOG_ERR("check disk failed");
+            return -1;
+        }
+    }
+
+    mp.mnt_point = DISK_MOUNT_PT;
+    ret = fs_mount(&mp);
+    if (ret != 0)
+    {
+        LOG_ERR("Error mounting disk, err:%d\n", ret);
+        return -1;
+    }
+
+    LOG_DBG("mount disk done");
+
+    sys_dlist_init(&dlist_dir);
+
+    struct ctx_dir *ctx_dir_root = k_malloc(sizeof(struct ctx_dir));
+    if (ctx_dir_root == NULL)
+    {
+        LOG_ERR("k_malloc root dir failed");
+        fs_unmount(&mp);
+        return -1;
+    }
+
+    snprintf(ctx_dir_root->dir_path, sizeof(ctx_dir_root->dir_path), "%s", DISK_MOUNT_PT);
+    sys_dlist_init(&ctx_dir_root->dlist_file);
+    ctx_dir_root->file_num = 0;
+    sys_dlist_append(&dlist_dir, &ctx_dir_root->dir_node);
+
+    scan_root_dir(ctx_dir_root);
+
+    tf_read_config_file();
+
+    return 0;
+}
+
+void tf_deinit(void)
+{
+    int ret = fs_unmount(&mp);
+    if (ret != 0)
+    {
+        LOG_ERR("Error unmounting disk, err:%d\n", ret);
+    }
+
+    LOG_DBG("umount disk done");
 }
 
 char *tf_find_first_bmp(void)
@@ -523,10 +524,16 @@ char *tf_find_first_bmp(void)
     return NULL;
 }
 
-int tf_read_bmp(const char *file_path, uint8_t **bmp_buf)
+int tf_read_bmp(const char *file_path, uint8_t *bmp_buf)
 {
     struct fs_file_t fd;
     fs_file_t_init(&fd);
+
+    if (file_path == NULL)
+    {
+        LOG_ERR("file_path is NULL");
+        return -1;
+    }
 
     int ret = fs_open(&fd, file_path, FS_O_READ);
     if (ret != 0)
@@ -535,14 +542,15 @@ int tf_read_bmp(const char *file_path, uint8_t **bmp_buf)
         return -1;
     }
 
-    ret = fs_read(&fd, *bmp_buf, CONFIG_BMP_ORIGINAL_SIZE);
+    ret = fs_read(&fd, bmp_buf, CONFIG_BMP_ORIGINAL_SIZE);
     fs_close(&fd);
-    if (ret < 0)
+    if (ret != CONFIG_BMP_ORIGINAL_SIZE)
     {
         LOG_ERR("read bmp %s fail ret=%d", file_path, ret);
+        return -1;
     }
 
-    return ret;
+    return 0;
 }
 
 /* 
@@ -604,6 +612,11 @@ uint32_t tf_get_carousel_interval(void)
 bool tf_get_loop_play(void)
 {
     return config_info.loop_play;
+}
+
+char *tf_get_start_file_path(void)
+{
+    return config_info.start_file_path;
 }
 
 void tf_test_change_loop_play(bool loop_play)
