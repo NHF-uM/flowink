@@ -21,18 +21,6 @@
 		};
 	};
 
-	uart1_default: uart1_default {
-		group1 {
-			pinmux = <UART1_TX_GPIO17>;
-			output-high;
-		};
-
-		group2 {
-			pinmux = <UART1_RX_GPIO18>;
-			bias-pull-up;
-		};
-	};
-
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <I2C0_SDA_GPIO1>;
@@ -59,6 +47,18 @@
 		};
 	};
 
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_CSEL_GPIO15>,
+				 <SPIM3_SCLK_GPIO16>,
+				 <SPIM3_MISO_GPIO17>;
+		};
+
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO18>;
+		}output-low;
+	};
+	
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_SCLK_GPIO10>,

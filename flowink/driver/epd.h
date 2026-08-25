@@ -10,10 +10,6 @@
 #define EPD_COLOR_BLUE    0x5   
 #define EPD_COLOR_GREEN   0x6   
 
-#define EPD_7IN3E_WIDTH     (800)
-#define EPD_7IN3E_HEIGHT    (480)
-#define EPD_DATA_SIZE       (192000)
-
 /**
  * @brief 复位屏幕驱动芯片
  * @param  无

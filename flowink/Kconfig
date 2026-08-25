@@ -54,4 +54,20 @@ config HTTP_SERVER_SERVICE_PORT
 
 endmenu
 
+menu "EPD Configuration"
+
+config EPD_SEND_BUF_SIZE
+	int "EPD send buffer size"
+	default 192000
+	help
+	  Size of the buffer used to send data to the EPD display.
+
+config BMP_ORIGINAL_SIZE
+	int "BMP original size"
+	default 1152054
+	help
+	  The original size of the BMP file.
+
+endmenu
+
 source "Kconfig.zephyr"

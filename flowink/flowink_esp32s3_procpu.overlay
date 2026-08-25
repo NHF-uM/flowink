@@ -1,0 +1,25 @@
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+
+  /* sdhc-spi 需要软件 cs ！ */
+	cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+
+	sd: sd@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		/* sd卡上下电延迟时间，让其充分稳定 */
+		power-delay-ms = <2000>;
+		/* SPI时钟，SD卡SPI最高推荐24MHz，不要直接上24M先从8M调试 */
+		spi-max-frequency = <24000000>;
+
+		/* 挂载到SD总线，接入到disk系统 */
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+		};
+	};
+};

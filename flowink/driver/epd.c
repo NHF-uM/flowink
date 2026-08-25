@@ -11,6 +11,9 @@ LOG_MODULE_REGISTER(epd, LOG_LEVEL_DBG);
 
 #define EPD_NODE DT_NODELABEL(epd)
 
+#define EPD_7IN3E_WIDTH     (800)
+#define EPD_7IN3E_HEIGHT    (480)
+
 const struct spi_dt_spec epd_spi = SPI_DT_SPEC_GET(EPD_NODE, SPI_OP_MODE_MASTER | SPI_WORD_SET(8));
 const struct gpio_dt_spec epd_gpio_dc = GPIO_DT_SPEC_GET(EPD_NODE, dc_gpios);
 const struct gpio_dt_spec epd_gpio_rst = GPIO_DT_SPEC_GET(EPD_NODE, rst_gpios);
@@ -200,10 +203,10 @@ void epd_init(void)
 
 void epd_show_color(uint8_t color)
 {
-    uint8_t *buf = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, EPD_DATA_SIZE);
-    memset(buf, (color << 4) | color, EPD_DATA_SIZE);
+    uint8_t *buf = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
+    memset(buf, (color << 4) | color, CONFIG_EPD_SEND_BUF_SIZE);
     epd_send_command(0x10);
-    epd_send_data_bulk(buf, EPD_DATA_SIZE);
+    epd_send_data_bulk(buf, CONFIG_EPD_SEND_BUF_SIZE);
     shared_multi_heap_free(buf);
     epd_refresh();
 }
@@ -211,7 +214,7 @@ void epd_show_color(uint8_t color)
 void epd_show_image(uint8_t *Image)
 {
     epd_send_command(0x10);
-    epd_send_data_bulk(Image, EPD_DATA_SIZE);
+    epd_send_data_bulk(Image, CONFIG_EPD_SEND_BUF_SIZE);
     epd_refresh();
 }
 
