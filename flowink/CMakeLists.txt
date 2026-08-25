@@ -49,6 +49,7 @@ zephyr_linker_section(
 # 固定生成目录和读取目录
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/app/net/http_source/)
+set(read_dir1 ${CMAKE_CURRENT_SOURCE_DIR}/app/)
 
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES
@@ -65,11 +66,17 @@ generate_inc_file_for_target(app
     ${gen_dir}/${file}.gz.inc
     --gzip
 )
+
 endforeach()
 
 generate_inc_file_for_target(app
     ${read_dir}/zkk.png
     ${gen_dir}/zkk.png.inc
+)
+
+generate_inc_file_for_target(app
+    ${read_dir1}/build_in.bmp
+    ${gen_dir}/build_in.bmp.inc
 )
 
 if(CONFIG_APP_ENABLE_TEST)
@@ -78,5 +85,5 @@ if(CONFIG_APP_ENABLE_TEST)
     generate_inc_file_for_target(app
         ${read_dir_test}/test.bmp
         ${gen_dir}/test.bmp.inc
-    )
+)
 endif()

@@ -517,6 +517,7 @@ char *tf_find_first_bmp(void)
         file_ctx = SYS_DLIST_PEEK_HEAD_CONTAINER(&dir_ctx->dlist_file, file_ctx, file_node);
         if (file_ctx != NULL) /* 下一个目录有图片才能返回（没有图片的时候不会创建 file_ctx） */
         {
+            LOG_DBG("First BMP file: %s", file_ctx->file_path);
             return file_ctx->file_path;
         }
     }

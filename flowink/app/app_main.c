@@ -21,7 +21,7 @@ static void timer_enter_sleep_fn(struct k_timer *timer);
 K_TIMER_DEFINE(timer_enter_sleep, timer_enter_sleep_fn, NULL);
 
 static const uint8_t bmp[] = {
-#include "test.bmp.inc"
+#include "build_in.bmp.inc"
 };
 
 static uint8_t *data_bmp;
@@ -48,11 +48,12 @@ void bmp_decode_and_show_with_led(const uint8_t *bmp_buf)
  */
 static void play_bmp(const char *path_target)
 {
-    int ret = tf_read_bmp(path_target, data_bmp);
+    char *path = NULL;
 
+    int ret = tf_read_bmp(path_target, data_bmp);
     if (ret != 0)
     {
-        char *path = tf_find_first_bmp();
+        path = tf_find_first_bmp();
         if (path == NULL)
         {
             bmp_decode_and_show_with_led(bmp);
@@ -73,7 +74,8 @@ static void play_bmp(const char *path_target)
     nv_write_path(path);
 }
 
-static void mode_selected_handler(void);
+static void mode_basic_handler(bool is_tf_init_failure);
+static void mode_server_handler(void);
 
 /* 提供两个exe：一个用来乱序并且排序号，一个用来展示和拖拽图片，最后排序号  */
 /* 刷完图之后马上进入休眠（未实现）不然两个data 会和后续操作冲突 */
@@ -90,24 +92,68 @@ int main(void)
         LOG_WRN("Failed to initialize TF, related functions will be disabled.");
     }
 
-    {
-        epd_show_color(EPD_COLOR_WHITE);
-        k_sleep(K_SECONDS(1));
-        epd_sleep();
-        return 0;
-    }
+    // {
+    //     epd_show_color(EPD_COLOR_WHITE);
+    //     k_sleep(K_SECONDS(1));
+    //     epd_sleep();
+    //     return 0;
+    // }
 
-    /* 这样能正常刷，为什么下面的不行 */
-    {
-        data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
-        data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
-        bmp_decode_and_show_with_led(bmp);
-        k_sleep(K_SECONDS(1));
-        epd_sleep();
-        shared_multi_heap_free(data_bmp);
-        shared_multi_heap_free(data_epd);
-        return 0;
-    }
+    // /* 这样能正常刷，为什么下面的不行 */
+    // {
+    //     data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
+    //     data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
+    //     bmp_decode_and_show_with_led(bmp);
+    //     k_sleep(K_SECONDS(1));
+    //     epd_sleep();
+    //     shared_multi_heap_free(data_bmp);
+    //     shared_multi_heap_free(data_epd);
+    //     return 0;
+    // }
+
+    // {
+    //     data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
+    //     data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
+    //     if (data_bmp == NULL || data_epd == NULL)
+    //     {
+    //         LOG_ERR("Failed to allocate memory for data_epd");
+    //         if (data_bmp)
+    //             shared_multi_heap_free(data_bmp);
+    //         if (data_epd)
+    //             shared_multi_heap_free(data_epd);
+    //         return -1;
+    //     }
+    //     memset(data_bmp, 0xFF, CONFIG_BMP_ORIGINAL_SIZE);
+    //     memset(data_epd, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
+
+    //     tf_read_bmp("/SD:/1b5.bmp", data_bmp);
+    //     bmp_decode_to_epd(data_bmp, data_epd, true);
+    //     epd_show_image(data_epd);
+    //     k_sleep(K_MINUTES(3));
+
+    //     tf_read_bmp("/SD:/1b5.bmp", data_bmp);
+    //     bmp_decode_to_epd(data_bmp, data_epd, false);
+    //     epd_show_image(data_epd);
+    //     k_sleep(K_MINUTES(3));
+
+    //     tf_read_bmp("/SD:/bbb/45ff.bmp", data_bmp);
+    //     bmp_decode_to_epd(data_bmp, data_epd, true);
+    //     epd_show_image(data_epd);
+    //     k_sleep(K_MINUTES(3));
+
+    //     tf_read_bmp("/SD:/bbb/45ff.bmp", data_bmp);
+    //     bmp_decode_to_epd(data_bmp, data_epd, false);
+    //     epd_show_image(data_epd);
+    //     k_sleep(K_MINUTES(3));
+
+    //     tf_deinit();
+    //     shared_multi_heap_free(data_bmp);
+    //     shared_multi_heap_free(data_epd);
+    //     data_bmp = NULL;
+    //     data_epd = NULL;
+    //     epd_sleep();
+    //     return 0;
+    // }
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
@@ -190,7 +236,35 @@ int main(void)
             uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_MODE_SELECTED)
             {
-                mode_selected_handler(void);
+                led_set(led_mode, false, K_NO_WAIT);
+
+                data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
+                data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
+                if (data_bmp == NULL || data_epd == NULL)
+                {
+                    LOG_ERR("Failed to allocate memory for data_epd");
+                    if (data_bmp)
+                        shared_multi_heap_free(data_bmp);
+                    if (data_epd)
+                        shared_multi_heap_free(data_epd);
+                    return -1;
+                }
+                memset(data_bmp, 0xFF, CONFIG_BMP_ORIGINAL_SIZE);
+                memset(data_epd, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
+
+                if (flags & BTN_BIT_MODE_BASIC)
+                {
+                    mode_basic_handler(ret);
+                }
+                else if (flags & BTN_BIT_MODE_SERVER)
+                {
+                    mode_server_handler();
+                }
+
+                shared_multi_heap_free(data_bmp);
+                shared_multi_heap_free(data_epd);
+                data_bmp = NULL;
+                data_epd = NULL;
             }
             else
             {
@@ -268,40 +342,4 @@ static void mode_server_handler(void)
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     LOG_DBG("Server mode finished");
-}
-
-static void mode_selected_handler(void)
-{
-    led_set(led_mode, false, K_NO_WAIT);
-
-    data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
-    data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
-    if (data_bmp == NULL || data_epd == NULL)
-    {
-        LOG_ERR("Failed to allocate memory for data_epd");
-        if (data_bmp)
-            shared_multi_heap_free(data_bmp);
-        if (data_epd)
-            shared_multi_heap_free(data_epd);
-        return -1;
-    }
-    memset(data_bmp, 0xFF, CONFIG_BMP_ORIGINAL_SIZE);
-    memset(data_epd, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
-
-    if (flags & BTN_BIT_MODE_BASIC)
-    {
-        mode_basic_handler(ret);
-    }
-    else if (flags & BTN_BIT_MODE_SERVER)
-    {
-        mode_server_handler();
-    }
-
-    shared_multi_heap_free(data_bmp);
-    shared_multi_heap_free(data_epd);
-    data_bmp = NULL;
-    data_epd = NULL;
-
-    /* 定时休眠，需要关闭时钟唤醒才行（未实现！） */
-
 }

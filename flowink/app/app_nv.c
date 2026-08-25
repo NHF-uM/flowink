@@ -77,7 +77,7 @@ void nv_write_path(const char *path_buf)
 {
     if (!device_is_ready(retained_mem_device))
     {
-        LOG_DBG("retained_mem device is not ready!\n");
+        LOG_WRN("retained_mem device is not ready!\n");
         return;
     }
 
@@ -94,6 +94,8 @@ void nv_write_path(const char *path_buf)
     {
         LOG_WRN("retained_mem write path failed!\n");
     }
+
+    LOG_DBG("nv retained path written: %s\n", path);
 }
 
 void nv_break_magic(void)
