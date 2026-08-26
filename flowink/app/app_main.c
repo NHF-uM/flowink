@@ -91,8 +91,8 @@ int main(void)
         LOG_WRN("Failed to initialize TF, related functions will be disabled.");
     }
 
-    epd_show_color(EPD_COLOR_WHITE);
-    k_sleep(K_MINUTE(3));
+    // epd_show_color(EPD_COLOR_WHITE);
+    // k_sleep(K_MINUTES(3));
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
@@ -161,7 +161,7 @@ int main(void)
             uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_MODE_SELECTED)
             {
-                k_timer_stop(&timer_mode);
+                k_timer_stop(&timer_enter_sleep);
                 led_set(led_mode, false, K_NO_WAIT);
 
                 data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
@@ -268,7 +268,7 @@ static void mode_server_handler(void)
     http_server_stop();
     wifi_deinit1();
 
-    pwr_set_sleep_timer_wakeup(K_HOURS(24));
+    pwr_set_sleep_timer_wakeup(24 * 3600);
     // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     pwr_enter_sleep();
     LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");

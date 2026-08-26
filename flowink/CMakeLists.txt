@@ -48,7 +48,7 @@ zephyr_linker_section(
 # 固定生成目录和读取目录
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/app/net/http_source/)
-set(read_dir1 ${CMAKE_CURRENT_SOURCE_DIR}/resource/)
+set(read_dir1 ${CMAKE_CURRENT_SOURCE_DIR}/resources/)
 
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES

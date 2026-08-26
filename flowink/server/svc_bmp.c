@@ -121,7 +121,6 @@ int bmp_decode_to_epd(const uint8_t *bmp_buf, uint8_t *epd_buf, bool rotate_180)
             epd_set_pixel(epd_buf, tx, ty, is_portrait ? pw : w, color);
         }
     }
-
-    LOG_DBG("bmp decode to epd finish, rotate_180=%d", rotate_180);
+    
     return 0;
 }
