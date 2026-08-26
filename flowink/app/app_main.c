@@ -26,6 +26,10 @@ static const uint8_t bmp[] = {
 static uint8_t *data_bmp;
 static uint8_t *data_epd;
 
+/**
+ * @brief 解码失败就退出了，不刷内置图？ 
+ * @param bmp_buf 
+ */
 void bmp_decode_and_show_with_led(const uint8_t *bmp_buf)
 {
     int ret = bmp_decode_to_epd(bmp_buf, data_epd, true);
@@ -41,36 +45,53 @@ void bmp_decode_and_show_with_led(const uint8_t *bmp_buf)
 }
 
 /**
- * @brief 刷传入路径图片——>刷能找到的第一张图片——>刷内置图片
- * 注意：目前该函数的所有调用方均未传入动态分配内存，所以不需要释放
- * @param path_target 图片路径，传入 NULL 则直接刷新能找到的第一张图片
+ * @brief 刷传入路径图片——>刷 start_file_path ——>刷能找到的第一张图片——>刷内置图片
+ * @param path_target 图片路径，传入 NULL 则直接从 start_file_path 开始流程
  */
 static void play_bmp(const char *path_target)
 {
-    char *path = NULL;
+    const char *path = NULL;
+    int ret = -1;
 
-    int ret = tf_read_bmp(path_target, data_bmp);
-    if (ret != 0)
+    if (path_target != NULL)
     {
-        path = tf_find_first_bmp();
-        if (path == NULL)
+        ret = tf_read_bmp(path_target, data_bmp);
+        if (ret == 0)
         {
-            bmp_decode_and_show_with_led(bmp);
-            nv_break_magic();
-            return;
-        }
-        else
-        {
-            tf_read_bmp(path, data_bmp); /* 不会出错 */
-            bmp_decode_and_show_with_led(data_bmp);
+            path = path_target;
+            goto bmp_ok;
         }
     }
-    else
+
+    path = tf_get_start_file_path();
+    if (path != NULL)
     {
-        bmp_decode_and_show_with_led(data_bmp);
+        ret = tf_read_bmp(path, data_bmp);
+        if (ret == 0)
+        {
+            goto bmp_ok;
+        }
     }
 
+    path = tf_find_first_bmp();
+    if (path != NULL)
+    {
+        ret = tf_read_bmp(path, data_bmp);
+        if (ret == 0)
+        {
+            goto bmp_ok;
+        }
+    }
+
+show_build_in_bmp:
+    bmp_decode_and_show_with_led(bmp);
+    nv_break_magic();
+    return;
+
+bmp_ok:
+    bmp_decode_and_show_with_led(data_bmp);
     nv_write_path(path);
+    return;
 }
 
 static void mode_basic_handler(bool is_tf_init_failure);
@@ -90,9 +111,6 @@ int main(void)
     {
         LOG_WRN("Failed to initialize TF, related functions will be disabled.");
     }
-
-    // epd_show_color(EPD_COLOR_WHITE);
-    // k_sleep(K_MINUTES(3));
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
@@ -114,7 +132,7 @@ int main(void)
 
         if (ret)
         {
-            bmp_decode_and_show_with_led(bmp);
+            bmp_decode_and_show_with_led(bmp)
 
             goto sleep;
         }
@@ -126,21 +144,13 @@ int main(void)
             /* 每次唤醒都会刷新链表，只有在上次休眠之后又删除了图片才会返回 NULL，复用 path 为 next_path */
             char *next_path = tf_find_next_bmp(path); /* real_path 可能不存在*/
 
-            if (next_path != NULL)
-            {
-                play_bmp(next_path);
-            }
-            else
-            {
-                play_bmp(tf_get_start_file_path());
-            }
-
+            play_bmp(next_path);
             nv_free_path(path);
         }
         else
         {
             /* nv读取失败或者路径无效，播放 start */
-            play_bmp(tf_get_start_file_path());
+            play_bmp(NULL);
         }
 
     sleep:
@@ -227,24 +237,24 @@ K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL
 
 static void timer_enter_sleep_fn(struct k_timer *timer)
 {
+    tf_deinit();
     pwr_enter_sleep();
 }
 
 static void mode_basic_handler(bool is_tf_init_failure)
 {
-
     LOG_DBG("Basic mode selected");
 
     if (is_tf_init_failure)
     {
-        bmp_decode_and_show_with_led(bmp);
+        bmp_decode_and_show_with_led(bmp)
         return;
     }
 
-    char *path = tf_get_start_file_path();
-    play_bmp(path);
+    play_bmp(NULL);
 
-    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
+    pwr_set_sleep_timer_wakeup(180);
+    // pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     pwr_enter_sleep();
     LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
@@ -268,7 +278,8 @@ static void mode_server_handler(void)
     http_server_stop();
     wifi_deinit1();
 
-    pwr_set_sleep_timer_wakeup(24 * 3600);
+    pwr_set_sleep_timer_wakeup(180);
+    // pwr_set_sleep_timer_wakeup(24 * 3600);
     // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     pwr_enter_sleep();
     LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");

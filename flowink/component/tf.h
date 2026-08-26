@@ -56,7 +56,7 @@ bool tf_get_loop_play(void);
 uint32_t tf_get_carousel_interval(void);
 
 /**
- * @brief 获取配置文件起始路径
+ * @brief 获取配置文件起始路径，路径字符串为动态分配（此处无需释放！！）
  * @param  无
  * @return config_info->start_file_path
  */

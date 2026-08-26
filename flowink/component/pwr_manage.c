@@ -44,8 +44,6 @@ void pwr_init(void)
 {
     pwr_update_wakeup_cause();
 
-    
-
     if (!gpio_is_ready_dt(&btn_wakeup_spec))
     {
         LOG_ERR("btn_wakeup pin not ready \n");
@@ -68,7 +66,7 @@ wakeup_source_t pwr_get_wakeup_cause(void)
 
 void pwr_set_sleep_timer_wakeup(int time_s)
 {
-    if (time_s < 300 || time_s > (3600 * 24))
+    if (time_s < 180 || time_s > (3600 * 24))
     {
         LOG_ERR("invalid wakeup time %ds", time_s);
         return;
