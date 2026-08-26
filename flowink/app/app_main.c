@@ -161,8 +161,8 @@ int main(void)
             uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_MODE_SELECTED)
             {
-                k_timer_stop(&timer_mode)
-                    led_set(led_mode, false, K_NO_WAIT);
+                k_timer_stop(&timer_mode);
+                led_set(led_mode, false, K_NO_WAIT);
 
                 data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
                 data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
@@ -245,7 +245,8 @@ static void mode_basic_handler(bool is_tf_init_failure)
     play_bmp(path);
 
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
-    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+    // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+    pwr_enter_sleep();
     LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
 }
 
@@ -268,6 +269,7 @@ static void mode_server_handler(void)
     wifi_deinit1();
 
     pwr_set_sleep_timer_wakeup(K_HOURS(24));
-    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+    // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+    pwr_enter_sleep();
     LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");
 }
