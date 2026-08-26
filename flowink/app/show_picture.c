@@ -1,6 +1,14 @@
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
 #include "led.h"
 #include "tf.h"
+#include "epd.h"
+#include "nv.h"
+#include "svc_bmp.h"
+
+LOG_MODULE_REGISTER(show_picture, LOG_LEVEL_DBG);
 
 static const uint8_t buildin_bmp[] = {
 #include "build_in.bmp.inc"
@@ -10,7 +18,7 @@ static bool is_heap_ready;
 static uint8_t *data_bmp;
 static uint8_t *data_epd;
 
-static void decode_show_with_led(uint8_t *bmp_buf)
+static void decode_show_with_led(const uint8_t *bmp_buf)
 {
     int ret = bmp_decode_to_epd(bmp_buf, data_epd, true);
     if (ret != 0)
@@ -100,7 +108,6 @@ void show_pic_tf_bmp(const char *path_target)
         }
     }
 
-show_build_in_bmp:
     decode_show_with_led(buildin_bmp);
     nv_break_magic();
     return;

@@ -4,6 +4,7 @@
 #include "pwr_manage.h"
 #include "rgb_strip.h"
 #include "net.h"
+#include "epd.h"
 #include "tf.h"
 #include "show_picture.h"
 
@@ -14,6 +15,7 @@ K_TIMER_DEFINE(timer_enter_sleep, timer_enter_sleep_fn, NULL);
 
 static void timer_enter_sleep_fn(struct k_timer *timer)
 {
+    epd_sleep();
     tf_deinit();
     pwr_enter_sleep();
 }
@@ -43,9 +45,11 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     show_pic_free();
 
     LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
-    pwr_set_sleep_timer_wakeup(180);
-    // pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
-    // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+
+    /* 阻塞 3 秒让日志稳定输出 */
+    k_sleep(K_SECONDS(3));
+    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
+    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     pwr_enter_sleep();
 }
 
@@ -79,8 +83,10 @@ void app_mode_server_handler(void)
     wifi_deinit1();
 
     LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");
-    pwr_set_sleep_timer_wakeup(180);
-    // pwr_set_sleep_timer_wakeup(24 * 3600);
-    // k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+
+    /* 阻塞 3 秒让日志稳定输出 */
+    k_sleep(K_SECONDS(3));
+    pwr_set_sleep_timer_wakeup(24 * 3600);
+    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
     pwr_enter_sleep();
 }

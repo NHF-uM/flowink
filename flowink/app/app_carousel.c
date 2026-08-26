@@ -4,6 +4,7 @@
 #include "pwr_manage.h"
 #include "tf.h"
 #include "nv.h"
+#include "epd.h"
 #include "show_picture.h"
 
 LOG_MODULE_REGISTER(app_carousel, LOG_LEVEL_DBG);
@@ -45,7 +46,10 @@ void app_carousel_timer_wakeup_run(bool tf_init_fail)
 end:
     show_pic_free();
 
-    /* 立即休眠 */
+    /* 立即休眠，阻塞 3 秒让日志稳定输出 */
+    k_sleep(K_SECONDS(3));
+    epd_sleep();
+    tf_deinit();
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     pwr_enter_sleep();
 }

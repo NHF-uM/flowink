@@ -4,6 +4,7 @@
 #include "btn.h"
 #include "led.h"
 #include "epd.h"
+#include "tf.h"
 #include "rgb_strip.h"
 #include "pwr_manage.h"
 #include "app_mode.h"
@@ -28,6 +29,10 @@ int main(void)
     }
     
     led_set(led_pwr, true, K_FOREVER);
+
+    #include "show_picture.h"
+    show_pic_clear();
+    return 0;
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
     if (wake_cause == WAKEUP_TIMER)

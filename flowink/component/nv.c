@@ -14,30 +14,40 @@ static char path[128]; /* 128 字节的路径缓冲区，读取和写入要完�
 
 static const struct device *retained_mem_device = DEVICE_DT_GET(DT_NODELABEL(retained_mem0));
 
+/**
+ * @brief 读取magic值
+ * @param magic_out 输出读到的magic
+ * @return 0 成功
+ */
+static int nv_read_magic(uint32_t *magic_out)
+{
+    return retained_mem_read(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)magic_out, sizeof(*magic_out));
+}
+
 char *nv_read_path(void)
 {
     if (!device_is_ready(retained_mem_device))
     {
-        LOG_DBG("retained_mem device is not ready!\n");
+        LOG_WRN("retained_mem device is not ready!\n");
         return NULL;
     }
 
     uint32_t magic = 0;
-    int err = retained_mem_read(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)&magic, sizeof(magic));
+    int err = nv_read_magic(&magic);
     if (err != 0)
     {
-        LOG_DBG("read magic fail, err=%d", err);
+        LOG_WRN("read magic fail, err=%d", err);
         goto init_retained;
     }
 
     if (magic != RETAIN_MAGIC)
     {
-    init_retained:
+init_retained:
         magic = RETAIN_MAGIC;
         err = retained_mem_write(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)&magic, sizeof(magic));
         if (err != 0)
         {
-            LOG_DBG("retained_mem write magic failed!\n");
+            LOG_WRN("retained_mem write magic failed!\n");
             return NULL;
         }
 
@@ -54,7 +64,7 @@ char *nv_read_path(void)
     err = retained_mem_read(retained_mem_device, RETAIN_OFFSET_PATH, (uint8_t *)path, sizeof(path));
     if (err != 0)
     {
-        LOG_DBG("retained_mem read path failed!\n");
+        LOG_WRN("retained_mem read path failed!\n");
         return NULL;
     }
 
@@ -70,7 +80,7 @@ char *nv_read_path(void)
 
     if (path[0] == '\0')
     {
-        LOG_DBG("nv retained path is empty");
+        LOG_WRN("nv retained path is empty");
         return NULL;
     }
 
@@ -113,9 +123,25 @@ void nv_write_path(const char *path_buf)
     strncpy(path, path_buf, sizeof(path) - 1);
     path[sizeof(path) - 1] = '\0';
 
-    if (retained_mem_write(retained_mem_device, RETAIN_OFFSET_PATH, (uint8_t *)path, sizeof(path)))
+    uint32_t magic = 0;
+    int err = nv_read_magic(&magic);
+    if ((err != 0) || (magic != RETAIN_MAGIC))
     {
-        LOG_WRN("retained_mem write path failed!\n");
+        uint32_t valid_magic = RETAIN_MAGIC;
+        err = retained_mem_write(retained_mem_device, RETAIN_OFFSET_MAGIC, (uint8_t *)&valid_magic, sizeof(valid_magic));
+        if (err != 0)
+        {
+            LOG_WRN("retained_mem write magic during write_path failed! err=%d", err);
+            return;
+        }
+        LOG_DBG("nv_write_path: magic invalid, refresh magic + path");
+    }
+
+    err = retained_mem_write(retained_mem_device, RETAIN_OFFSET_PATH, (uint8_t *)path, sizeof(path));
+    if (err != 0)
+    {
+        LOG_WRN("retained_mem write path failed! err=%d", err);
+        return;
     }
 
     LOG_DBG("nv retained path written: %s\n", path);
