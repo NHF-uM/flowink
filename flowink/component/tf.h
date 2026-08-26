@@ -1,5 +1,8 @@
-#ifndef _APP_TF_H_
-#define _APP_TF_H_
+#ifndef _TF_H_
+#define _TF_H_
+
+#include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief 检查 TF 卡状态、扫描并生成 dlist

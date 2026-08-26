@@ -29,6 +29,7 @@ typedef struct {
 
 /**
  * @brief 把原始 bmp 数据转换为 epd 数据
+ * 注意：内部未做边界检查，需要保证传入的 bmp 数据大小正确
  * @param bmp_buf  输入 bmp
  * @param epd_buf  输出到epd
  * @param rotate_180 是否需要旋转180°，满足屏幕的放置需求

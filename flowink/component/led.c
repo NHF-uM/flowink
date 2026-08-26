@@ -4,7 +4,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(app_led);
+LOG_MODULE_REGISTER(led);
 
 #define LED_PWR_NODE DT_NODELABEL(led_pwr)
 #define LED_MODE_NODE DT_NODELABEL(led_mode)

@@ -56,6 +56,14 @@ endmenu
 
 menu "EPD Configuration"
 
+config EPD_PANEL_HEIGHT
+	int "Height of the epd display screen"
+	default 480
+
+config EPD_PANEL_WIDTH
+	int "Width of the epd display screen"
+	default 800
+
 config EPD_SEND_BUF_SIZE
 	int "EPD send buffer size"
 	default 192000

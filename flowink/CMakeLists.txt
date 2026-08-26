@@ -12,11 +12,10 @@ if(NOT DEFINED CONFIG_APP_ENABLE_TEST)
     set(CONFIG_APP_ENABLE_TEST OFF CACHE BOOL "Enable compile test folder code")
 endif()
 
-#=====修复点1：先收集源文件，不要提前调用target_sources=====
 FILE(GLOB app_sources 
     app/*.c
     app/net/*.c
-    driver/*.c
+    component/*.c
     server/*.c
 )
 
@@ -30,7 +29,7 @@ target_sources(app PRIVATE ${app_sources})
 target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/app
     ${CMAKE_CURRENT_SOURCE_DIR}/app/net
-    ${CMAKE_CURRENT_SOURCE_DIR}/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}/component
     ${CMAKE_CURRENT_SOURCE_DIR}/server
 )
 
@@ -49,7 +48,7 @@ zephyr_linker_section(
 # 固定生成目录和读取目录
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/app/net/http_source/)
-set(read_dir1 ${CMAKE_CURRENT_SOURCE_DIR}/app/)
+set(read_dir1 ${CMAKE_CURRENT_SOURCE_DIR}/resource/)
 
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES

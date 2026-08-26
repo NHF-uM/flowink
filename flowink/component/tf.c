@@ -9,9 +9,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "app_tf.h"
+#include "tf.h"
 
-LOG_MODULE_REGISTER(app_tf, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(tf, LOG_LEVEL_DBG);
 
 #define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/" DISK_DRIVE_NAME ":"

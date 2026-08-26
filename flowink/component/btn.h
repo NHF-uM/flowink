@@ -1,5 +1,5 @@
-#ifndef _APP_BTN_H_
-#define _APP_BTN_H_
+#ifndef _BTN_H_
+#define _BTN_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
@@ -14,4 +14,4 @@ extern struct k_event btn_mode_event;
 
 void btn_init(void);
 
-#endif /* _APP_BTN_H_ */
+#endif

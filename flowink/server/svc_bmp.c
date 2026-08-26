@@ -4,119 +4,121 @@
 
 LOG_MODULE_REGISTER(svc_bmp, LOG_LEVEL_DBG);
 
-#define EPD_PANEL_WIDTH      800
-#define EPD_PANEL_HEIGHT     480
-#define EPD_PANEL_WIDTH_BYTE (EPD_PANEL_WIDTH / 2) /* 2像素/字节 */
-#define BMP_PORTRAIT_CW      1 /* 竖屏旋转方向: 1=顺时针, 0=逆时针(实测后如需翻转改为0) */
-
-#define BMP_CHECK_PTR(ptr)            \
-    do                                \
-    {                                 \
-        if (!(ptr))                   \
-        {                             \
-            LOG_WRN("invalid param"); \
-            return -1;                \
-        }                             \
+#define BMP_CHECK_PTR(ptr)                 \
+    do                                     \
+    {                                      \
+        if (!(ptr))                        \
+        {                                  \
+            LOG_WRN("invalid addr param"); \
+            return -1;                     \
+        }                                  \
     } while (0)
+
+/**
+ * @brief 24BMP 的 R/G/B888 转为 EPD 支持的六色
+ * @param r RGB-R
+ * @param g RGB-G
+ * @param b RGB-B
+ * @return EPD 支持的颜色值
+ */
+static inline uint8_t rgb_to_epd_color(uint8_t r, uint8_t g, uint8_t b)
+{
+    if (b == 0 && g == 0 && r == 0)
+        return 0; /* Black   */
+    if (b == 255 && g == 255 && r == 255)
+        return 1; /* White   */
+    if (b == 0 && g == 255 && r == 255)
+        return 2; /* Yellow  */
+    if (b == 0 && g == 0 && r == 255)
+        return 3; /* Red     */
+    if (b == 255 && g == 0 && r == 0)
+        return 5; /* Blue    */
+    if (b == 0 && g == 255 && r == 0)
+        return 6; /* Green   */
+    return 1;     /* Default White */
+}
+
+/**
+ * @brief 向 epd_buf 写入单个像素（E6 全彩 7in3E 采用半字节打包）
+ * 注意：未对 tx ty 做边界检查，这里需要保证传入的 bmp 数据大小正确
+ * @param epd_buf 待写入缓存
+ * @param tx 横坐标
+ * @param ty 纵坐标
+ * @param panel_w 屏幕宽度
+ * @param color 颜色像素
+ */
+static inline void epd_set_pixel(uint8_t *epd_buf, uint32_t tx, uint32_t ty,
+                                 uint32_t panel_w, uint8_t color)
+{
+    uint32_t addr = tx / 2 + ty * (panel_w / 2);
+
+    if (tx & 1)
+        epd_buf[addr] = (epd_buf[addr] & 0xF0) | color;
+    else
+        epd_buf[addr] = (epd_buf[addr] & 0x0F) | (color << 4);
+}
 
 int bmp_decode_to_epd(const uint8_t *bmp_buf, uint8_t *epd_buf, bool rotate_180)
 {
     BMP_CHECK_PTR(bmp_buf);
     BMP_CHECK_PTR(epd_buf);
 
-    bmp_file_header_t *fh = (bmp_file_header_t *)bmp_buf;
-    bmp_info_header_t *ih = (bmp_info_header_t *)(bmp_buf + sizeof(bmp_file_header_t));
+    const bmp_file_header_t *fh = (const bmp_file_header_t *)bmp_buf;
+    const bmp_info_header_t *ih = (const bmp_info_header_t *)(bmp_buf + sizeof(bmp_file_header_t));
 
     if (fh->bType != 0x4D42 || ih->biBitCount != 24)
     {
-        LOG_ERR("invalid bmp header, type=0x%04X, bitcount=%d, expect BM&24bpp", fh->bType, ih->biBitCount);
+        LOG_ERR("invalid bmp header, type=0x%04X, bitcount=%d", fh->bType, ih->biBitCount);
         return -1;
     }
 
-    bool res_ok = (ih->biWidth == 800 && ih->biHeight == 480) || (ih->biWidth == 480 && ih->biHeight == 800);
-    if (!res_ok)
+    const uint32_t w = ih->biWidth;
+    const uint32_t h = ih->biHeight;
+    const uint32_t pw = CONFIG_EPD_PANEL_WIDTH;
+    const uint32_t ph = CONFIG_EPD_PANEL_HEIGHT;
+    const bool is_portrait = (w == 480 && h == 800);
+
+    if (!is_portrait && !(w == 800 && h == 480))
     {
-        LOG_ERR("unsupported resolution, w=%u h=%u, only support 800x480/480x800", ih->biWidth, ih->biHeight);
+        LOG_ERR("unsupported resolution %ux%u", w, h);
         return -1;
     }
 
-    /* 【新增】竖屏图: 旋转90°后映射到横屏800x480布局 */
-    bool is_portrait = (ih->biWidth == 480 && ih->biHeight == 800);
-
-    uint32_t width = ih->biWidth;
-    uint32_t height = ih->biHeight;
-    uint32_t width_byte = width / 2;            /* 2 像素/字节 (横屏800->400, 竖屏480->240) */
-    uint32_t row_stride = (width * 3 + 3) & ~3; /* BMP 每行 4 字节对齐 */
+    const uint32_t row_stride = (w * 3 + 3) & ~3;
     const uint8_t *pixel = bmp_buf + fh->bOffset;
 
-    for (uint32_t y = 0; y < height; y++)
+    for (uint32_t y = 0; y < h; y++)
     {
         const uint8_t *row = pixel + y * row_stride;
-        uint32_t Y = rotate_180 ? y : (height - 1 - y); /* 合成后的垂直变换 */
+        const uint32_t Y = rotate_180 ? y : (h - 1 - y);
 
-        for (uint32_t x = 0; x < width; x++)
+        for (uint32_t x = 0; x < w; x++)
         {
-            /* 24位 BMP （一个像素占三个字节）=> 6色像素数据（一个像素占一个字节） */
-            uint8_t b = row[x * 3 + 0];
-            uint8_t g = row[x * 3 + 1];
-            uint8_t r = row[x * 3 + 2];
+            const uint8_t b = row[x * 3 + 0];
+            const uint8_t g = row[x * 3 + 1];
+            const uint8_t r = row[x * 3 + 2];
+            const uint8_t color = rgb_to_epd_color(r, g, b);
 
-            uint8_t color;
-            if (b == 0 && g == 0 && r == 0)
-                color = 0; // Black
-            else if (b == 255 && g == 255 && r == 255)
-                color = 1; // White
-            else if (b == 0 && g == 255 && r == 255)
-                color = 2; // Yellow
-            else if (b == 0 && g == 0 && r == 255)
-                color = 3; // Red
-            else if (b == 255 && g == 0 && r == 0)
-                color = 5; // Blue
-            else if (b == 0 && g == 255 && r == 0)
-                color = 6; // Green
-            else
-                color = 1; // 默认白色
-
-            /* 合成后的水平变换 */
-            uint32_t X = rotate_180 ? (width - x - 1) : x;
-            uint32_t addr;
-
+            uint32_t tx, ty;
             if (is_portrait)
             {
-                /* 竖屏图: 源(x,y)旋转90°到目标, rotate_180再叠加180°翻转 */
-                uint32_t tx, ty;
-                if (BMP_PORTRAIT_CW)
-                {
-                    tx = y;
-                    ty = x;
-                }
-                else
-                {
-                    tx = EPD_PANEL_WIDTH - y - 1;
-                    ty = EPD_PANEL_HEIGHT - x - 1;
-                }
+                /* 经验证，这里要对竖图做顺时针90度旋转，映射到物理尺寸 */
+                tx = y;
+                ty = x;
 
                 if (rotate_180)
                 {
-                    tx = EPD_PANEL_WIDTH - tx - 1;
-                    ty = EPD_PANEL_HEIGHT - ty - 1;
+                    tx = pw - tx - 1;
+                    ty = ph - ty - 1;
                 }
-                addr = tx / 2 + ty * EPD_PANEL_WIDTH_BYTE;
-
-                if (tx % 2 == 0)
-                    epd_buf[addr] = (epd_buf[addr] & 0x0F) | (color << 4); // 偶数列 -> 高 nibble
-                else
-                    epd_buf[addr] = (epd_buf[addr] & 0xF0) | color; // 奇数列 -> 低 nibble
             }
             else
             {
-                addr = X / 2 + Y * width_byte;
-
-                if (X % 2 == 0)
-                    epd_buf[addr] = (epd_buf[addr] & 0x0F) | (color << 4); // 偶数列 -> 高 nibble
-                else
-                    epd_buf[addr] = (epd_buf[addr] & 0xF0) | color; // 奇数列 -> 低 nibble
+                tx = rotate_180 ? (w - x - 1) : x;
+                ty = Y;
             }
+
+            epd_set_pixel(epd_buf, tx, ty, is_portrait ? pw : w, color);
         }
     }
 

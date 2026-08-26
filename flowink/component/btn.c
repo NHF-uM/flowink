@@ -3,9 +3,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include "multi_button.h"
-#include "app_btn.h"
+#include "btn.h"
 
-LOG_MODULE_REGISTER(app_btn, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(btn, LOG_LEVEL_DBG);
 
 #define BTN_MODE_NODE DT_NODELABEL(btn_mode)
 

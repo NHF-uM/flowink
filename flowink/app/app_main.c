@@ -6,14 +6,13 @@
 #include <zephyr/logging/log.h>
 #include "pwr_manage.h"
 #include "led.h"
-#include "app_btn.h"
+#include "btn.h"
 #include "rgb_strip.h"
 #include "svc_bmp.h"
 #include "epd.h"
 #include "net.h"
-// #include "test.h"
-#include "app_tf.h"
-#include "app_nv.h"
+#include "tf.h"
+#include "nv.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
@@ -44,7 +43,7 @@ void bmp_decode_and_show_with_led(const uint8_t *bmp_buf)
 /**
  * @brief 刷传入路径图片——>刷能找到的第一张图片——>刷内置图片
  * 注意：目前该函数的所有调用方均未传入动态分配内存，所以不需要释放
- * @param path_target 图片路径
+ * @param path_target 图片路径，传入 NULL 则直接刷新能找到的第一张图片
  */
 static void play_bmp(const char *path_target)
 {
@@ -92,68 +91,8 @@ int main(void)
         LOG_WRN("Failed to initialize TF, related functions will be disabled.");
     }
 
-    // {
-    //     epd_show_color(EPD_COLOR_WHITE);
-    //     k_sleep(K_SECONDS(1));
-    //     epd_sleep();
-    //     return 0;
-    // }
-
-    // /* 这样能正常刷，为什么下面的不行 */
-    // {
-    //     data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
-    //     data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
-    //     bmp_decode_and_show_with_led(bmp);
-    //     k_sleep(K_SECONDS(1));
-    //     epd_sleep();
-    //     shared_multi_heap_free(data_bmp);
-    //     shared_multi_heap_free(data_epd);
-    //     return 0;
-    // }
-
-    // {
-    //     data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
-    //     data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
-    //     if (data_bmp == NULL || data_epd == NULL)
-    //     {
-    //         LOG_ERR("Failed to allocate memory for data_epd");
-    //         if (data_bmp)
-    //             shared_multi_heap_free(data_bmp);
-    //         if (data_epd)
-    //             shared_multi_heap_free(data_epd);
-    //         return -1;
-    //     }
-    //     memset(data_bmp, 0xFF, CONFIG_BMP_ORIGINAL_SIZE);
-    //     memset(data_epd, 0xFF, CONFIG_EPD_SEND_BUF_SIZE);
-
-    //     tf_read_bmp("/SD:/1b5.bmp", data_bmp);
-    //     bmp_decode_to_epd(data_bmp, data_epd, true);
-    //     epd_show_image(data_epd);
-    //     k_sleep(K_MINUTES(3));
-
-    //     tf_read_bmp("/SD:/1b5.bmp", data_bmp);
-    //     bmp_decode_to_epd(data_bmp, data_epd, false);
-    //     epd_show_image(data_epd);
-    //     k_sleep(K_MINUTES(3));
-
-    //     tf_read_bmp("/SD:/bbb/45ff.bmp", data_bmp);
-    //     bmp_decode_to_epd(data_bmp, data_epd, true);
-    //     epd_show_image(data_epd);
-    //     k_sleep(K_MINUTES(3));
-
-    //     tf_read_bmp("/SD:/bbb/45ff.bmp", data_bmp);
-    //     bmp_decode_to_epd(data_bmp, data_epd, false);
-    //     epd_show_image(data_epd);
-    //     k_sleep(K_MINUTES(3));
-
-    //     tf_deinit();
-    //     shared_multi_heap_free(data_bmp);
-    //     shared_multi_heap_free(data_epd);
-    //     data_bmp = NULL;
-    //     data_epd = NULL;
-    //     epd_sleep();
-    //     return 0;
-    // }
+    epd_show_color(EPD_COLOR_WHITE);
+    k_sleep(K_MINUTE(3));
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
@@ -177,48 +116,34 @@ int main(void)
         {
             bmp_decode_and_show_with_led(bmp);
 
-            shared_multi_heap_free(data_bmp);
-            shared_multi_heap_free(data_epd);
-            return 0;
+            goto sleep;
         }
 
         /* 读取nv的记录，播放下一张，如果找不到，就刷start_file，start_file 找不到就刷第一张，第一张没有就刷内置图片*/
         char *path = nv_read_path();
         if (path != NULL)
         {
-            size_t len = strlen(path);
-            char *real_path = k_malloc(len + 1);
-            if (real_path != NULL)
+            /* 每次唤醒都会刷新链表，只有在上次休眠之后又删除了图片才会返回 NULL，复用 path 为 next_path */
+            char *next_path = tf_find_next_bmp(path); /* real_path 可能不存在*/
+
+            if (next_path != NULL)
             {
-                memcpy(real_path, path, len);
-                real_path[len] = '\0';
-
-                /* 每次唤醒都会刷新链表，只有在上次休眠之后又删除了图片才会返回 NULL，复用 path 为 next_path */
-                path = tf_find_next_bmp(real_path); /* real_path 可能不存在*/
-                k_free(real_path);
-
-                if (path != NULL)
-                {
-                    play_bmp(path);
-                }
-                else
-                {
-                    /* 不存在 */
-                    goto start_file;
-                }
+                play_bmp(next_path);
             }
             else
             {
-                LOG_ERR("Failed to allocate memory for path");
-                goto start_file;
+                play_bmp(tf_get_start_file_path());
             }
+
+            nv_free_path(path);
         }
-        else /* nv读取失败，播放 start */
+        else
         {
-        start_file:
+            /* nv读取失败或者路径无效，播放 start */
             play_bmp(tf_get_start_file_path());
         }
 
+    sleep:
         shared_multi_heap_free(data_bmp);
         shared_multi_heap_free(data_epd);
 
@@ -236,7 +161,8 @@ int main(void)
             uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_MODE_SELECTED)
             {
-                led_set(led_mode, false, K_NO_WAIT);
+                k_timer_stop(&timer_mode)
+                    led_set(led_mode, false, K_NO_WAIT);
 
                 data_bmp = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_BMP_ORIGINAL_SIZE);
                 data_epd = shared_multi_heap_alloc(SMH_REG_ATTR_EXTERNAL, CONFIG_EPD_SEND_BUF_SIZE);
@@ -318,7 +244,9 @@ static void mode_basic_handler(bool is_tf_init_failure)
     char *path = tf_get_start_file_path();
     play_bmp(path);
 
-    LOG_DBG("Basic mode finished");
+    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
+    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
+    LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
 }
 
 static void mode_server_handler(void)
@@ -339,7 +267,7 @@ static void mode_server_handler(void)
     http_server_stop();
     wifi_deinit1();
 
-    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
+    pwr_set_sleep_timer_wakeup(K_HOURS(24));
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
-    LOG_DBG("Server mode finished");
+    LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");
 }
