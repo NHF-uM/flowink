@@ -20,38 +20,6 @@ static void timer_enter_sleep_fn(struct k_timer *timer)
     pwr_enter_sleep(true);
 }
 
-void app_mode_basic_handler(bool is_tf_init_failure)
-{
-    LOG_DBG("Basic mode selected");
-
-    k_timer_stop(&timer_enter_sleep);
-
-    int ret = show_pic_malloc(NULL);
-    if (ret != 0)
-    {
-        LOG_ERR("no enough heap, enter deep sleep");
-        pwr_enter_sleep(false);
-    }
-
-    if (is_tf_init_failure)
-    {
-        show_pic_buildin_bmp();
-    }
-    else
-    {
-        show_pic_tf_bmp(NULL);
-    }
-
-    show_pic_free();
-
-    LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
-
-    /* 阻塞 3 秒让日志稳定输出 */
-    k_sleep(K_SECONDS(3));
-    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
-    k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
-}
-
 void app_mode_server_handler(void)
 {
     LOG_DBG("Server mode selected");
@@ -75,6 +43,27 @@ void app_mode_server_handler(void)
     k_sem_take(&sem_http_data_uping, K_FOREVER);
 
     show_pic_server_bmp();
+
+
+
+
+
+
+
+
+
+    k_sleep(K_SECONDS(3));
+    pwr_set_sleep_timer_wakeup(180);
+    k_timer_start(&timer_enter_sleep, K_NO_WAIT, K_NO_WAIT);
+
+
+
+
+
+
+
+
+    
     show_pic_free();
 
     LOG_DBG("Server mode finished, stopping HTTP server and deinitializing Wi-Fi...");

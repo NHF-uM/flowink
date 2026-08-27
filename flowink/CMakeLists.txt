@@ -49,11 +49,6 @@ zephyr_linker_section(
 set(read_dir ${CMAKE_CURRENT_SOURCE_DIR}/resources/)
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
-generate_inc_file_for_target(app
-    ${read_dir}/build_in.bmp
-    ${gen_dir}/build_in.bmp.inc
-)
-
 # 把需要嵌入固件的网页文件名写在这里
 set(WEB_FILES
     index.html

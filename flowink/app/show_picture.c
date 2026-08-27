@@ -10,10 +10,6 @@
 
 LOG_MODULE_REGISTER(show_picture, LOG_LEVEL_DBG);
 
-static const uint8_t buildin_bmp[] = {
-#include "build_in.bmp.inc"
-};
-
 static bool is_heap_ready;
 static uint8_t *data_bmp;
 static uint8_t *data_epd;
@@ -67,57 +63,6 @@ void show_pic_free(void)
     is_heap_ready = false;
 }
 
-void show_pic_tf_bmp(const char *path_target)
-{
-    if (!is_heap_ready)
-    {
-        LOG_ERR("Heap of picture_show is not ready");
-        return;
-    }
-
-    const char *path = NULL;
-    int ret = -1;
-
-    if (path_target != NULL)
-    {
-        ret = tf_read_bmp(path_target, data_bmp);
-        if (ret == 0)
-        {
-            path = path_target;
-            goto bmp_ok;
-        }
-    }
-
-    path = tf_get_start_file_path();
-    if (path != NULL)
-    {
-        ret = tf_read_bmp(path, data_bmp);
-        if (ret == 0)
-        {
-            goto bmp_ok;
-        }
-    }
-
-    path = tf_find_first_bmp();
-    if (path != NULL)
-    {
-        ret = tf_read_bmp(path, data_bmp);
-        if (ret == 0)
-        {
-            goto bmp_ok;
-        }
-    }
-
-    decode_show_with_led(buildin_bmp);
-    nv_break_magic();
-    return;
-
-bmp_ok:
-    decode_show_with_led(data_bmp);
-    nv_write_path(path);
-    return;
-}
-
 void show_pic_server_bmp(void)
 {
     if (!is_heap_ready)
@@ -127,16 +72,4 @@ void show_pic_server_bmp(void)
     }
 
     decode_show_with_led(data_bmp);
-}
-
-void show_pic_buildin_bmp(void)
-{
-    if (!is_heap_ready)
-    {
-        LOG_ERR("Heap of picture_show is not ready");
-        return;
-    }
-
-    decode_show_with_led(buildin_bmp);
-    nv_break_magic();
 }
