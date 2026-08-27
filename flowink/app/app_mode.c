@@ -50,7 +50,6 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     k_sleep(K_SECONDS(3));
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
-    pwr_enter_sleep(true);
 }
 
 void app_mode_server_handler(void)
@@ -88,5 +87,4 @@ void app_mode_server_handler(void)
     k_sleep(K_SECONDS(3));
     pwr_set_sleep_timer_wakeup(24 * 3600);
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
-    pwr_enter_sleep(true);
 }

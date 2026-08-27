@@ -36,6 +36,8 @@ uint8_t read_btn(uint8_t button_id)
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 static void btn_mode_clicked_cb(Button *btn, void *user_data)
@@ -87,7 +89,7 @@ void btn_init(void)
 		LOG_ERR("Error configuring button pin: %d", ret);
 		return;
 	}
-	button_init(&btn_wakeup, read_btn, 1, 1)
+	button_init(&btn_wakeup, read_btn, 1, 1);
 	button_attach(&btn_wakeup, BTN_DOUBLE_CLICK, btn_mode_double_clicked_cb, NULL);
 	button_start(&btn_wakeup);
 
