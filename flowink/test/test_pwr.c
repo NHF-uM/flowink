@@ -59,7 +59,7 @@ void test_pwr(void)
 	LOG_DBG("Enter deep sleep after 5s timer wakeup\n");
 
 	esp_sleep_enable_timer_wakeup(5 * 1000 * 1000);
-	pwr_enter_sleep();
+	pwr_enter_sleep(true);
 
 	return;
 }

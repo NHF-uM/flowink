@@ -1,7 +1,6 @@
 #ifndef _PWR_MANAGER_H_
 #define _PWR_MANAGER_H_
 
-
 typedef enum {
     WAKEUP_TIMER,
     WAKEUP_IO,
@@ -28,8 +27,8 @@ void pwr_set_sleep_timer_wakeup(int time_s);
 
 /**
  * @brief 进入深度休眠
- * @param  无
+ * @param  wakeup_timer_enable 是否开启定时唤醒
  */
-void pwr_enter_sleep(void);
+void pwr_enter_sleep(bool wakeup_timer_enable)
 
 #endif

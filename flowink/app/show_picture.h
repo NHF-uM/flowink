@@ -32,11 +32,4 @@ void show_pic_server_bmp(void);
  */
 void show_pic_buildin_bmp(void);
 
-/**
- * @brief 刷白屏
- * @param 无
- */
-void show_pic_clear(void);
-
-
 #endif  

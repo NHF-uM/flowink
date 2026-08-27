@@ -140,10 +140,3 @@ void show_pic_buildin_bmp(void)
     decode_show_with_led(buildin_bmp);
     nv_break_magic();
 }
-
-void show_pic_clear(void)
-{
-    led_set(led_pwr, true, K_MSEC(500));
-    epd_show_color(EPD_COLOR_WHITE);
-    led_set(led_pwr, true, K_FOREVER);
-}

@@ -51,5 +51,5 @@ end:
     epd_sleep();
     tf_deinit();
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
-    pwr_enter_sleep();
+    pwr_enter_sleep(true);
 }

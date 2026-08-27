@@ -75,9 +75,22 @@ void pwr_set_sleep_timer_wakeup(int time_s)
     wakeup_time_sec = time_s;
 }
 
-void pwr_enter_sleep(void)
+void pwr_enter_sleep(bool wakeup_timer_enable)
 {
-    /* 经过测试发现 sys_poweroff() 要紧跟 esp_sleep_enable_timer_wakeup()，rtc 唤醒才会生效 */
-    esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000);
+    if (wakeup_timer_enable)
+    {
+        /* 经过测试发现 sys_poweroff() 要紧跟 esp_sleep_enable_timer_wakeup()，rtc 唤醒才会生效 */
+        esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000);
+    }
+    else
+    {
+        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+    }
+    
     sys_poweroff();
+}
+
+int get_btn_wakeup_status(void)
+{
+    return gpio_pin_get_dt(&btn_wakeup_spec);
 }
