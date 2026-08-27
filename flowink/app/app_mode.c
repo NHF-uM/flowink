@@ -46,8 +46,6 @@ void app_mode_basic_handler(bool is_tf_init_failure)
 
     LOG_DBG("Basic mode finished, enter deep sleep after 5 minutes");
 
-    /* 阻塞 3 秒让日志稳定输出 */
-    k_sleep(K_SECONDS(3));
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
 }
@@ -83,8 +81,6 @@ void app_mode_server_handler(void)
 
     LOG_DBG("Server mode finished, enter deep sleep after 5 minutes");
 
-    /* 阻塞 3 秒让日志稳定输出 */
-    k_sleep(K_SECONDS(3));
     pwr_set_sleep_timer_wakeup(24 * 3600);
     k_timer_start(&timer_enter_sleep, K_MINUTES(5), K_NO_WAIT);
 }

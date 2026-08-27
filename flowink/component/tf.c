@@ -405,6 +405,7 @@ static void tf_read_config_file(void)
             if (strcmp(key, "loop_interval") == 0)
             {
                 config_info.carousel_interval = atoi(value);
+                LOG_DBG("loop_interval=%d", config_info.carousel_interval);
             }
             else if (strcmp(key, "loop_subfolder") == 0)
             {
@@ -417,6 +418,7 @@ static void tf_read_config_file(void)
                     LOG_WRN("loop_subfolder invalid val '%s', keep default true", value);
                     config_info.loop_play = false;
                 }
+                LOG_DBG("loop_subfolder=%d", config_info.loop_play ? 1 : 0);
             }
             else if (strcmp(key, "start_file_name") == 0)
             {
@@ -435,6 +437,7 @@ static void tf_read_config_file(void)
                 {
                     config_info.start_file_path = NULL;
                 }
+                LOG_DBG("start_file_name=%s", config_info.start_file_path ? config_info.start_file_path : "NULL");
             }
         }
 

@@ -68,7 +68,6 @@ void pwr_set_sleep_timer_wakeup(int time_s)
 {
     if (time_s < 180 || time_s > (3600 * 24))
     {
-        LOG_ERR("invalid wakeup time %ds", time_s);
         return;
     }
 
@@ -81,12 +80,16 @@ void pwr_enter_sleep(bool wakeup_timer_enable)
     {
         /* 经过测试发现 sys_poweroff() 要紧跟 esp_sleep_enable_timer_wakeup()，rtc 唤醒才会生效 */
         esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000);
+        LOG_DBG("enter deep sleep, wakeup after %ds", wakeup_time_sec);
     }
     else
     {
-        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+        /* 调用 esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER) 之后进入深度休眠，io 唤醒会失效，
+            所以这里用 24h 的定时唤醒代替 */
+        esp_sleep_enable_timer_wakeup(86400 * 1000 * 1000); 
+        LOG_DBG("enter deep sleep, wakeup by btn_wakeup or timer after 24h");
     }
-    
+
     sys_poweroff();
 }
 
