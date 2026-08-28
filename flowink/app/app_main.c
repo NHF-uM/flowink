@@ -21,6 +21,9 @@ void enter_sleep_with_white_panel(void)
     epd_show_color(EPD_COLOR_WHITE);
     led_set(led_pwr, true, K_FOREVER);
 
+    k_sleep(K_SECONDS(3));
+    epd_sleep();
+    tf_deinit();
     pwr_enter_sleep(false);
 }
 
