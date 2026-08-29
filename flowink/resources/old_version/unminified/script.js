@@ -1,0 +1,114 @@
+let ImageSys, InPutButton, SendButton, FileInput, fileFlag, file;
+let uploadLoading = null;
+
+function createLoadingTip() {
+    const div = document.createElement('div');
+    div.id = "upload-tip";
+    div.style.position = 'fixed';
+    div.style.top = '50%';
+    div.style.left = '50%';
+    div.style.transform = 'translate(-50%, -50%)';
+    div.style.background = 'rgba(0,0,0,0.75)';
+    div.style.color = '#fff';
+    div.style.padding = '24px 40px';
+    div.style.borderRadius = '8px';
+    div.style.zIndex = '9999';
+    div.style.fontSize = "16px";
+    div.textContent = '正在上传，请耐心等待...';
+    document.body.appendChild(div);
+    return div;
+}
+function removeLoadingTip() {
+    if (uploadLoading) {
+        document.body.removeChild(uploadLoading);
+        uploadLoading = null;
+    }
+}
+
+function Even_init() {
+    InPutButton = document.getElementById("Input_Button");
+    SendButton = document.getElementById("Send_Button");
+    FileInput = document.getElementById("File_Input");
+    ImageSys = document.getElementById("Image_Input");
+    InPutButton.addEventListener("click", InPutButton_Even);
+    FileInput.addEventListener("change", FileInput_Even);
+    SendButton.addEventListener("click", SendButton_Even);
+}
+
+function InPutButton_Even() {
+    FileInput.click();
+}
+
+function FileInput_Even(e) {
+    fileFlag = 0;
+    file = e.target.files[0];
+    if (!file) return void alert("未选择文件");
+    if (!file.type.startsWith("image/")) return void alert("请选择图片文件");
+    if (!file.name.toLowerCase().endsWith(".bmp")) return void alert("请选择 BMP 图片文件");
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const buf = new Uint8Array(e.target.result);
+        if (66 !== buf[0] || 77 !== buf[1]) return void alert("无效的 BMP 文件");
+        const width = buf[18] | buf[19] << 8 | buf[20] << 16 | buf[21] << 24;
+        const height = buf[22] | buf[23] << 8 | buf[24] << 16 | buf[25] << 24;
+        if (24 !== buf[28]) return void alert("请选择 24 位 BMP 文件");
+        if (!(800 === width && 480 === height || 480 === width && 800 === height))
+            return void alert(`BMP 图像分辨率必须为 800x480 或 480x800,当前为 ${width}x${height}`);
+
+        const o = URL.createObjectURL(file);
+        ImageSys.src = o;
+        ImageSys.onload = () => URL.revokeObjectURL(o);
+        fileFlag = 1;
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function SendButton_Even() {
+    if (!fileFlag || !file) {
+        alert("请选择图片文件");
+        return;
+    }
+    uploadLoading = createLoadingTip();
+    SendButton.disabled = true;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/dataUP");
+    xhr.setRequestHeader("Content-Type", file.type);
+
+    xhr.upload.onprogress = function (ev) {
+        if (!ev.lengthComputable) return;
+        const percent = (ev.loaded / ev.total * 100).toFixed(1);
+        const loadedMB = (ev.loaded / 1024 / 1024).toFixed(2);
+        const totalMB = (ev.total / 1024 / 1024).toFixed(2);
+        uploadLoading.textContent = `正在上传 ${percent}% ｜ ${loadedMB}MB / ${totalMB}MB`;
+    };
+
+    xhr.onload = function () {
+        SendButton.disabled = false;
+        removeLoadingTip();
+        if (xhr.status >= 200 && xhr.status < 300) {
+            alert("上传成功：" + xhr.responseText);
+        } else {
+            alert("上传失败！服务器返回错误");
+        }
+    };
+
+    xhr.onerror = function () {
+        SendButton.disabled = false;
+        removeLoadingTip();
+        console.error("网络异常");
+        alert("上传失败！网络错误");
+    };
+
+    xhr.timeout = 10000;
+    xhr.ontimeout = function () {
+        SendButton.disabled = false;
+        removeLoadingTip();
+        alert("上传超时，请检查Wi-Fi连接");
+    };
+
+    xhr.send(file);
+}
+
+document.addEventListener("DOMContentLoaded", Even_init);

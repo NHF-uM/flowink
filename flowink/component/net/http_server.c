@@ -22,7 +22,7 @@ static const uint8_t zkk_png[] = {
 
 static size_t data_received;
 static uint8_t *recv_buf;
-K_SEM_DEFINE(sem_http_data_uping, 0, 1);	/* starts off "available" */
+K_SEM_DEFINE(sem_http_data_uping, 0, 1); /* starts off "available" */
 
 static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
@@ -86,10 +86,10 @@ static int data_up_handler(struct http_client_ctx *client, enum http_transaction
 	data_received += request_ctx->data_len;
 
 	/* 每隔8192字节发送一次日志（太快的话log会丢包） */
-	if (data_received / 8192 > (data_received - request_ctx->data_len) / 8192)
-	{
-		LOG_DBG("data has been received (%zd bytes)", data_received);
-	}
+	// if (data_received / 8192 > (data_received - request_ctx->data_len) / 8192)
+	// {
+	// 	LOG_DBG("data has been received (%zd bytes)", data_received);
+	// }
 
 	if (status == HTTP_SERVER_REQUEST_DATA_FINAL)
 	{

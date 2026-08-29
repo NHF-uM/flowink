@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/**)",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/component/**)",
+      "Bash(cd /home/nhf_um/zephyrproject/flowink/flowink)",
+      "Bash(ls resources *)",
+      "Bash(ls server *)",
+      "Bash(ls component/net)",
+      "Read(//c/Users/28445/**)",
+      "Read(///wsl.localhost/Ubuntu-24.04//**)",
+      "Bash(command -v node)",
+      "Bash(node --check \"//wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/new_http/script.js\")",
+      "Bash(cp \"//wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/http/zkk.png\" \"//wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/new_http/zkk.png\")",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/**)",
+      "Bash(node --check script.js)",
+      "Bash(rm -f /tmp/test_flow.js /tmp/test_portrait.js /tmp/test_portrait2.js /tmp/verify_rotate.js)",
+      "Bash(ls -laR new_http_unminified)"
+    ]
+  }
+}
