@@ -26,14 +26,7 @@ void app_carousel_timer_wakeup_run(bool tf_init_fail)
         /* 上次休眠之后又删除了图片 或者 最后一张图片 返回 NULL，复用 path 为 next_path */
         char *next_path = tf_find_next_bmp(path);
 
-        if (next_path != NULL)
-        {
-            show_pic_tf_bmp(next_path);
-        }
-        else
-        {
-            show_pic_tf_bmp(NULL);
-        }
+        show_pic_tf_bmp(next_path);
 
         nv_free_path(path);
     }

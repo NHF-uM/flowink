@@ -586,7 +586,7 @@ char *tf_find_next_bmp(const char *current_file_path)
                 if (dir_ctx == NULL)
                 {
                     /* 全部目录遍历完，重头开始播放 */
-                    return NULL;
+                    return tf_find_first_bmp();
                 }
 
                 /* 还有目录，但是要跳过空目录 */

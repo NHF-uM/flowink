@@ -37,7 +37,7 @@ int tf_read_bmp(const char *file_path, uint8_t *bmp_buf);
  * 如果 loop_play=true：当前目录链表内循环播放；
  * 如果 loop_play=false：播完当前目录全部文件，切下一目录；
  * @param current_file_path 当前文件路径
- * @return 遍历完所有目录和文件 或者 tf 卡被修改（未找到当前文件）返回 NULL
+ * @return 找不到下一张图片时返回 NULL，通常表示 tf 卡被修改（未找到当前文件）
  */
 char *tf_find_next_bmp(const char *current_file_path);
 
