@@ -1,20 +1,24 @@
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(pwr_m);
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
+#include <zephyr/logging/log.h>
 #include "pwr_manage.h"
 #include <esp_sleep.h>
 
-#define WAKEUP_IO_NODE DT_ALIAS(pwr_wakeup_io)
-static const struct gpio_dt_spec wakeup_io_spec = GPIO_DT_SPEC_GET(WAKEUP_IO_NODE, gpios);
-static wakeup_source_t wakeup_cause; 
+LOG_MODULE_REGISTER(pwr_manage, LOG_LEVEL_DBG);
 
-/// @brief 更新并保存深度休眠唤醒原因
-/// @param  无
+#define BTN_WAKEUP_NODE DT_NODELABEL(btn_wakeup)
+static const struct gpio_dt_spec btn_wakeup_spec = GPIO_DT_SPEC_GET(BTN_WAKEUP_NODE, gpios);
+static wakeup_source_t wakeup_cause;
+
+static uint32_t wakeup_time_sec = CONFIG_WAKEUP_TIME_SEC;
+
+/**
+ * @brief 更新并保存深度休眠唤醒原因
+ * @param  无
+ */
 static void pwr_update_wakeup_cause(void)
 {
     uint32_t cause = esp_sleep_get_wakeup_causes();
@@ -32,39 +36,25 @@ static void pwr_update_wakeup_cause(void)
     else
     {
         LOG_INF("CPU woken up by unknown wakeup source:%d", cause);
+        wakeup_cause = WAKEUP_UNKNOWN;
     }
-
-    wakeup_cause = WAKEUP_UNKNOWN;
 }
 
-/// @brief 配置唤醒引脚，更新记录唤醒源
-/// @param  
 void pwr_init(void)
 {
     pwr_update_wakeup_cause();
-    
-    if (!gpio_is_ready_dt(&wakeup_io_spec))
+
+    if (!gpio_is_ready_dt(&btn_wakeup_spec))
     {
-        LOG_ERR("pwr_wakeup pin not ready \n");
+        LOG_ERR("btn_wakeup pin not ready \n");
         return;
     }
-
-    // if (!device_is_ready(retained_mem_device)) {
-	// 	LOG_ERR("retained_mem device is not ready!\n");
-	// 	return 0;
-    // }
 
     /* 在dts已经配置为中断唤醒引脚了，只需要再配置一下输入和中断触发 */
-    int ret = gpio_pin_configure_dt(&wakeup_io_spec, GPIO_INPUT);
+    int ret = gpio_pin_configure_dt(&btn_wakeup_spec, GPIO_INPUT);
     if (ret != 0)
     {
-        LOG_ERR("fail to configure pwr_wakeup pin: %d", ret);
-        return;
-    }
-
-    if (!pm_device_wakeup_enable(wakeup_io_spec.port, true))
-    {
-        LOG_ERR("failed to enable wakeup pin \n");
+        LOG_ERR("fail to configure btn_wakeup pin: %d", ret);
         return;
     }
 }
@@ -74,22 +64,53 @@ wakeup_source_t pwr_get_wakeup_cause(void)
     return wakeup_cause;
 }
 
-/// @brief 设置轮播唤醒时间
-/// @param time_s 单位/秒，范围300~86400
-void pwr_set_sleep_timer_wakeup(int time_s)
+void pwr_set_sleep_timer_wakeup(uint32_t time_s)
 {
-    if (time_s < 300 || time_s > (3600 * 24))
+    if (time_s < 180 || time_s > (3600 * 24))
     {
-        LOG_ERR("invalid wakeup time %ds", time_s);
-        time_s = CONFIG_WAKEUP_TIME_SEC;
+        return;
     }
 
-    esp_sleep_enable_timer_wakeup(time_s * 1000 * 1000);
+    wakeup_time_sec = time_s;
 }
 
-/// @brief 进入深度休眠，每次唤醒后都需要重新配置唤醒源
-/// @param  无
-void pwr_enter_sleep(void)
+void pwr_enter_sleep(bool wakeup_timer_enable)
 {
+    // if (wakeup_timer_enable)
+    // {
+    //     /* 经过测试发现 sys_poweroff() 要紧跟 esp_sleep_enable_timer_wakeup()，rtc 唤醒才会生效 */
+    //     uint64_t time = wakeup_time_sec * 1000 * 1000;
+    //     int ret = esp_sleep_enable_timer_wakeup(time);
+    //             if (ret == ESP_ERR_INVALID_ARG)
+    //     {
+    //         LOG_ERR("esp_sleep_enable_timer_wakeup fail, time=%lld", time);
+    //     }
+    //     else if (ret != ESP_OK)
+    //     {
+    //         LOG_ERR("esp_sleep_enable_timer_wakeup fail, ret=%d", ret);
+    //     }
+    // }
+    // else
+    // {
+    //     /* 调用 esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER) 之后进入深度休眠，io 唤醒会失效，
+    //         所以这里用 24h 的定时唤醒代替 */
+    //     uint64_t time = 86400ULL * 1000 * 1000;
+    //     int ret = esp_sleep_enable_timer_wakeup(time);
+    //     if (ret == ESP_ERR_INVALID_ARG)
+    //     {
+    //         LOG_ERR("esp_sleep_enable_timer_wakeup fail, time=%lld", time);
+    //     }
+    //     else if (ret != ESP_OK)
+    //     {
+    //         LOG_ERR("esp_sleep_enable_timer_wakeup fail, ret=%d", ret);
+    //     }
+    //     LOG_DBG("enter deep sleep, wakeup by btn_wakeup or timer after 24h");
+    // }
+
     sys_poweroff();
+}
+
+int get_btn_wakeup_status(void)
+{
+    return gpio_pin_get_dt(&btn_wakeup_spec);
 }
