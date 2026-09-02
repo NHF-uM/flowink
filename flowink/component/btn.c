@@ -21,7 +21,8 @@ static bool is_server_mode = true; /* 0 为基础模式，1 为服务器模式 *
 static Button btn_wakeup;
 static Button btn_mode;
 K_EVENT_DEFINE(btn_mode_event);
-static btn_callback btn_wakeup_double_clicked_callback;
+static btn_callback btn_wakeup_clicked_callback;
+static btn_callback btn_wakeup_long_pressed_callback;
 
 uint8_t read_btn(uint8_t button_id)
 {
@@ -48,13 +49,6 @@ static void btn_mode_clicked_cb(Button *btn, void *user_data)
 					   BTN_BIT_MODE_ALL);
 }
 
-static void btn_wakeup_double_clicked_cb(Button *btn, void *user_data)
-{
-	LOG_DBG("Button wakeup double clicked");
-
-	btn_wakeup_double_clicked_callback();
-}
-
 static void btn_mode_long_press_cb(Button *btn, void *user_data)
 {
 	LOG_DBG("Button mode long pressed");
@@ -66,6 +60,18 @@ static void btn_mode_long_press_cb(Button *btn, void *user_data)
 	{
 		k_event_set_masked(&btn_mode_event, BTN_BIT_MODE_BASIC | BTN_BIT_MODE_SELECTED, BTN_BIT_MODE_ALL);
 	}
+}
+
+static void btn_wakeup_clicked_cb(Button *btn, void *user_data)
+{
+	LOG_DBG("Button wakeup double clicked");
+	btn_wakeup_double_clicked_callback();
+}
+
+static void btn_wakeup_long_pressed_cb(Button *btn, void *user_data)
+{
+	LOG_DBG("Button wakeup long pressed");
+	btn_wakeup_long_pressed_callback();
 }
 
 static void btn_mode_timer_callback(struct k_timer *timer)
@@ -90,7 +96,8 @@ void btn_init(void)
 		return;
 	}
 	button_init(&btn_wakeup, read_btn, 1, 1);
-	button_attach(&btn_wakeup, BTN_DOUBLE_CLICK, btn_wakeup_double_clicked_cb, NULL);
+	button_attach(&btn_wakeup, BTN_SINGLE_CLICK, btn_wakeup_clicked_cb, NULL);
+	button_attach(&btn_wakeup, BTN_LONG_PRESS_START, btn_wakeup_long_pressed_cb, NULL);
 	button_start(&btn_wakeup);
 
 	button_init(&btn_mode, read_btn, 1, 2);
@@ -101,7 +108,12 @@ void btn_init(void)
 	k_timer_start(&btn_mode_timer, K_NO_WAIT, K_MSEC(5));
 }
 
-void btn_set_double_clicked_callback(btn_callback callback)
+void btn_set_clicked_callback(btn_callback callback)
 {
-	btn_wakeup_double_clicked_callback = callback;
+	btn_wakeup_clicked_callback = callback;
+}
+
+void btn_set_long_pressed_callback(btn_callback callback)
+{
+	btn_wakeup_long_pressed_callback = callback;
 }

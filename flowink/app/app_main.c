@@ -15,16 +15,21 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-void enter_sleep_with_white_panel(void)
+static void enter_sleep_cb(void)
 {
-    led_set(led_pwr, true, K_MSEC(500));
-    epd_show_color(EPD_COLOR_WHITE);
-    led_set(led_pwr, true, K_FOREVER);
-
-    k_sleep(K_SECONDS(3));
     epd_sleep();
     tf_deinit();
     pwr_enter_sleep(false);
+}
+
+static void clear_panel_cb(void)
+{
+    led_set(led_pwr, true, K_MSEC(500));
+    
+    epd_show_color(EPD_COLOR_WHITE);
+    k_sleep(K_SECONDS(5));  // 让系统稳定
+
+    led_set(led_pwr, true, K_FOREVER);
 }
 
 /* 提供两个exe：一个用来乱序并且排序号，一个用来展示和拖拽图片，最后排序号  */
@@ -41,7 +46,8 @@ int main(void)
     }
 
     led_set(led_pwr, true, K_FOREVER);
-    btn_set_double_clicked_callback(enter_sleep_with_white_panel);
+    btn_set_clicked_callback(enter_sleep_cb);
+    btn_set_long_pressed_callback(clear_panel_cb);
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();

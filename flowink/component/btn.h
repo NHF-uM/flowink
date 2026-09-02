@@ -15,6 +15,8 @@ extern struct k_event btn_mode_event;
 
 
 void btn_init(void);
-void btn_set_double_clicked_callback(btn_callback callback);
+void btn_set_clicked_callback(btn_callback callback);
+void btn_set_long_pressed_callback(btn_callback callback);
+
 
 #endif
