@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(pwr_manage, LOG_LEVEL_DBG);
 static const struct gpio_dt_spec btn_wakeup_spec = GPIO_DT_SPEC_GET(BTN_WAKEUP_NODE, gpios);
 static wakeup_source_t wakeup_cause;
 
+const static uint32_t time_s_day = 86400;
 static uint32_t wakeup_time_sec = CONFIG_WAKEUP_TIME_SEC;
 
 /**
@@ -66,37 +67,36 @@ wakeup_source_t pwr_get_wakeup_cause(void)
 
 void pwr_set_sleep_timer_wakeup(uint32_t time_s)
 {
-    if (time_s < 180 || time_s > (3600 * 24))
+    if (time_s < 180 || time_s > time_s_day)
     {
+        LOG_WRN("invalid sleep timer wakeup time:%d s, use default value:%d s", time_s, CONFIG_WAKEUP_TIME_SEC);
         return;
     }
-
     wakeup_time_sec = time_s;
 }
 
 void pwr_enter_sleep(bool wakeup_timer_enable)
 {
+    uint64_t time_us = 0;
+
     if (wakeup_timer_enable)
     {
-        /* 经过测试发现 sys_poweroff() 要紧跟 esp_sleep_enable_timer_wakeup()，rtc 唤醒才会生效 */
-        esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000 * 1000);
-        LOG_DBG("enter deep sleep, wakeup after %llds", wakeup_time_sec);
+        time_us = (uint64_t)wakeup_time_sec * 1000 * 1000;
     }
     else
     {
-        /* 调用 esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER) 之后进入深度休眠，io 唤醒会失效，
-            所以这里用 24h 的定时唤醒代替 */
-        uint64_t time = 86400ULL * 1000 * 1000;
-        int ret = esp_sleep_enable_timer_wakeup(time);
-        if (ret == ESP_ERR_INVALID_ARG)
-        {
-            LOG_ERR("esp_sleep_enable_timer_wakeup fail, time=%lld", time);
-        }
-        else if (ret != ESP_OK)
-        {
-            LOG_ERR("esp_sleep_enable_timer_wakeup fail, ret=%d", ret);
-        }
-        LOG_DBG("enter deep sleep, wakeup by btn_wakeup or timer after 24h");
+        time_us = (uint64_t)time_s_day * 1000 * 1000; // 24 hours in microseconds
+    }
+
+    int ret = esp_sleep_enable_timer_wakeup(time_us); 
+    if (ret == ESP_OK)
+    {
+        LOG_DBG("enable sleep timer wakeup:%d s", time_us / 1000 / 1000);
+    }
+    else if (ret == ESP_ERR_INVALID_ARG)
+    {
+        LOG_ERR("invalid sleep timer wakeup time:%d s", wakeup_time_sec);
+        return;
     }
 
     sys_poweroff();
