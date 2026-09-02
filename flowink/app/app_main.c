@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 static void enter_sleep_cb(void)
 {
+    LOG_DBG("Enter sleep mode");
     epd_sleep();
     tf_deinit();
     pwr_enter_sleep(false);
@@ -24,11 +25,9 @@ static void enter_sleep_cb(void)
 
 static void clear_panel_cb(void)
 {
+    LOG_DBG("Clear panel");
     led_set(led_pwr, true, K_MSEC(500));
-    
     epd_show_color(EPD_COLOR_WHITE);
-    k_sleep(K_SECONDS(5));  // 让系统稳定
-
     led_set(led_pwr, true, K_FOREVER);
 }
 

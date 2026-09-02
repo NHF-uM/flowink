@@ -64,8 +64,8 @@ static void btn_mode_long_press_cb(Button *btn, void *user_data)
 
 static void btn_wakeup_clicked_cb(Button *btn, void *user_data)
 {
-	LOG_DBG("Button wakeup double clicked");
-	btn_wakeup_double_clicked_callback();
+	LOG_DBG("Button wakeup clicked");
+	btn_wakeup_clicked_callback();
 }
 
 static void btn_wakeup_long_pressed_cb(Button *btn, void *user_data)
