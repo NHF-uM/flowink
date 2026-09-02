@@ -30,6 +30,7 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
+        pwr_set_sleep_timer_wakeup(24UL * 3600);
         k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
     }
 
@@ -60,7 +61,8 @@ void app_mode_server_handler(void)
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
-        pwr_enter_sleep(false);
+        pwr_set_sleep_timer_wakeup(24UL * 3600);
+        k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
     }
 
     wifi_init();
@@ -80,6 +82,6 @@ void app_mode_server_handler(void)
 
 
     LOG_DBG("Server mode finished, enter deep sleep after 24 hours");
-    pwr_set_sleep_timer_wakeup(24 * 3600);
+    pwr_set_sleep_timer_wakeup(24UL * 3600);
     k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
 }
