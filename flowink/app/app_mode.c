@@ -48,6 +48,13 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     LOG_DBG("Basic mode finished, enter deep sleep after 15 seconds");
     pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
     k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
+
+    // // 测试定时器问题
+    // k_sleep(K_SECONDS(15));
+    // epd_sleep();
+    // tf_deinit();
+    // pwr_enter_sleep(true);
+
 }
 
 void app_mode_server_handler(void)
@@ -79,7 +86,6 @@ void app_mode_server_handler(void)
     LOG_DBG("Server mode finished, stopping HTTP server and deinitializing Wi-Fi...");
     http_server_stop();
     wifi_deinit1();
-
 
     LOG_DBG("Server mode finished, enter deep sleep after 24 hours");
     pwr_set_sleep_timer_wakeup(24UL * 3600);

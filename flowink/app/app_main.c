@@ -18,9 +18,11 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 static void enter_sleep_cb(void)
 {
     LOG_DBG("Enter sleep mode");
-    epd_sleep();
     tf_deinit();
-    pwr_enter_sleep(false);
+    // epd_sleep();     // 测试线程卡住的问题
+    // pwr_enter_sleep(false);  // 测试线程卡住的问题
+
+    // 用 pwr_test 来测试，接上所有线和电源，再试试能不能唤醒
 }
 
 static void clear_panel_cb(void)
@@ -67,14 +69,14 @@ int main(void)
             {
                 led_set(led_mode, false, K_NO_WAIT);
 
-                if (flags & BTN_BIT_MODE_BASIC)
-                {
-                    app_mode_basic_handler(ret);
-                }
-                else if (flags & BTN_BIT_MODE_SERVER)
-                {
-                    app_mode_server_handler();
-                }
+                // if (flags & BTN_BIT_MODE_BASIC)
+                // {
+                app_mode_basic_handler(ret);
+                // }
+                // else if (flags & BTN_BIT_MODE_SERVER)
+                // {
+                //     app_mode_server_handler();
+                // }
             }
             else
             {
