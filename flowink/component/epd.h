@@ -18,24 +18,28 @@ void epd_reset(void);
 
 /**
  * @brief 上电初始化，检查设备 ready ，配置屏幕参数
+ * @note 含线程阻塞函数，禁止在中断中调用
  * @param  无
  */
 void epd_init(void);
 
 /**
  * @brief 发送单色像素数据并刷图，会等待 busy 线释放
+ * @note 含线程阻塞函数，禁止在中断中调用
  * @param color
  */
 void epd_show_color(uint8_t color);
 
 /**
  * @brief 发送 Image 像素数据并刷图，会等待 busy 线释放
+ * @note 含线程阻塞函数，禁止在中断中调用
  * @param Image 
  */
 void epd_show_image(uint8_t *Image);
 
 /**
  * @brief 进入休眠模式，再次唤醒需要调用 epd_reset()
+ * @note 含线程阻塞函数，禁止在中断中调用
  * @param  无
  */
 void epd_sleep(void);

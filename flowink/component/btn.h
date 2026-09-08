@@ -9,14 +9,12 @@
 #define BTN_BIT_MODE_SELECTED BIT(2)
 #define BTN_BIT_MODE_ALL (BTN_BIT_MODE_BASIC | BTN_BIT_MODE_SERVER | BTN_BIT_MODE_SELECTED)
 
-typedef void (*btn_callback)(void);
+#define BTN_BIT_WAKEUP_CLICKED BIT(3)
+#define BTN_BIT_WAKEUP_LONG_PRESSED BIT(4)
+#define BTN_BIT_WAKEUP_ALL (BTN_BIT_WAKEUP_CLICKED | BTN_BIT_WAKEUP_LONG_PRESSED)
 
 extern struct k_event btn_mode_event;
 
-
 void btn_init(void);
-void btn_set_clicked_callback(btn_callback callback);
-void btn_set_long_pressed_callback(btn_callback callback);
-
 
 #endif

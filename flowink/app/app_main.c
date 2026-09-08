@@ -19,10 +19,9 @@ static void enter_sleep_cb(void)
 {
     LOG_DBG("Enter sleep mode");
     tf_deinit();
-    // epd_sleep();     // 测试线程卡住的问题
-    // pwr_enter_sleep(false);  // 测试线程卡住的问题
-
-    // 用 pwr_test 来测试，接上所有线和电源，再试试能不能唤醒
+    epd_sleep();
+    k_sleep(K_SECONDS(2));
+    pwr_enter_sleep(false);
 }
 
 static void clear_panel_cb(void)
@@ -33,22 +32,18 @@ static void clear_panel_cb(void)
     led_set(led_pwr, true, K_FOREVER);
 }
 
-/* 提供两个exe：一个用来乱序并且排序号，一个用来展示和拖拽图片，最后排序号  */
 /* 深度休眠会清空所有 RAM 数据和 PSRAM 数据*/
 int main(void)
 {
     pwr_init();
     led_init();
+    led_set(led_pwr, true, K_FOREVER);
     epd_init();
     int ret = tf_init(false);
     if (ret)
     {
         LOG_WRN("Failed to initialize TF, related functions will be disabled.");
     }
-
-    led_set(led_pwr, true, K_FOREVER);
-    btn_set_clicked_callback(enter_sleep_cb);
-    btn_set_long_pressed_callback(clear_panel_cb);
 
     /* 两个唤醒模式只能运行一个，且运行完就会进入深度休眠，唤醒后从 main 函数重新开始运行*/
     wakeup_source_t wake_cause = pwr_get_wakeup_cause();
@@ -59,24 +54,32 @@ int main(void)
     else
     {
         btn_init();
+        led_set(led_mode, true, K_MSEC(200));
 
         while (1)
         {
-            /* 单击切换模式（仅置位模式），长按确定选择（具体模式和确定选择都置位） */
-            /* 这里要开启阻塞前清除标志位，因为按键软件定时器用的是sys_workq，事件会正常触发 */
-            uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL, true, K_FOREVER);
-            if (flags & BTN_BIT_MODE_SELECTED)
+            /* 这里要开启阻塞前清除标志位，因为软件定时器有自己的线程，所以事件会随时触发 */
+            uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL | BTN_BIT_WAKEUP_ALL, true, K_FOREVER);
+            if (flags & BTN_BIT_WAKEUP_CLICKED)
+            {
+                enter_sleep_cb();
+            }
+            else if (flags & BTN_BIT_WAKEUP_LONG_PRESSED)
+            {
+                clear_panel_cb();
+            }
+            else if (flags & BTN_BIT_MODE_SELECTED)
             {
                 led_set(led_mode, false, K_NO_WAIT);
 
-                // if (flags & BTN_BIT_MODE_BASIC)
-                // {
-                app_mode_basic_handler(ret);
-                // }
-                // else if (flags & BTN_BIT_MODE_SERVER)
-                // {
-                //     app_mode_server_handler();
-                // }
+                if (flags & BTN_BIT_MODE_BASIC)
+                {
+                    app_mode_basic_handler(ret);
+                }
+                else if (flags & BTN_BIT_MODE_SERVER)
+                {
+                    app_mode_server_handler();
+                }
             }
             else
             {

@@ -5,7 +5,7 @@ mainmenu "FlowInk Configuration"
 
 config WAKEUP_TIME_SEC
 	int "Wakeup time in seconds"
-	default 43200
+	default 180
 	help
 	  This option sets the time in seconds after which the device
 	  will wake up from deep sleep. Defaults to 12 hours.

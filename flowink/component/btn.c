@@ -17,12 +17,10 @@ enum
 
 static struct gpio_dt_spec btn_mode_spec = GPIO_DT_SPEC_GET(BTN_MODE_NODE, gpios);
 
-static bool is_server_mode = true; /* 0 为基础模式，1 为服务器模式 */
+static bool is_server_mode = false; /* 0 为基础模式，1 为服务器模式 */
 static Button btn_wakeup;
 static Button btn_mode;
 K_EVENT_DEFINE(btn_mode_event);
-static btn_callback btn_wakeup_clicked_callback;
-static btn_callback btn_wakeup_long_pressed_callback;
 
 uint8_t read_btn(uint8_t button_id)
 {
@@ -65,13 +63,13 @@ static void btn_mode_long_press_cb(Button *btn, void *user_data)
 static void btn_wakeup_clicked_cb(Button *btn, void *user_data)
 {
 	LOG_DBG("Button wakeup clicked");
-	btn_wakeup_clicked_callback();
+	k_event_post(&btn_mode_event, BTN_BIT_WAKEUP_CLICKED);
 }
 
 static void btn_wakeup_long_pressed_cb(Button *btn, void *user_data)
 {
 	LOG_DBG("Button wakeup long pressed");
-	btn_wakeup_long_pressed_callback();
+	k_event_post(&btn_mode_event, BTN_BIT_WAKEUP_LONG_PRESSED);
 }
 
 static void btn_mode_timer_callback(struct k_timer *timer)
@@ -106,14 +104,4 @@ void btn_init(void)
 	button_start(&btn_mode);
 
 	k_timer_start(&btn_mode_timer, K_NO_WAIT, K_MSEC(5));
-}
-
-void btn_set_clicked_callback(btn_callback callback)
-{
-	btn_wakeup_clicked_callback = callback;
-}
-
-void btn_set_long_pressed_callback(btn_callback callback)
-{
-	btn_wakeup_long_pressed_callback = callback;
 }

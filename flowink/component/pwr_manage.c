@@ -85,15 +85,12 @@ void pwr_enter_sleep(bool wakeup_timer_enable)
     }
     else
     {
-        time_us = (uint64_t)time_s_day * 1000 * 1000; // 24 hours in microseconds
+        /* 关掉时钟唤醒之后io唤醒也会失效，所以这里用24小时深休代替关闭时钟唤醒 */
+        time_us = (uint64_t)time_s_day * 1000 * 1000; 
     }
 
     int ret = esp_sleep_enable_timer_wakeup(time_us); 
-    if (ret == ESP_OK)
-    {
-        LOG_DBG("enable sleep timer wakeup:%d s", time_us / 1000 / 1000);
-    }
-    else if (ret == ESP_ERR_INVALID_ARG)
+    if (ret != ESP_OK)
     {
         LOG_ERR("invalid sleep timer wakeup time:%d s", wakeup_time_sec);
         return;

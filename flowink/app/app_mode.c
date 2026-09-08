@@ -10,13 +10,11 @@
 
 LOG_MODULE_REGISTER(app_mode, LOG_LEVEL_DBG);
 
-static void timer_enter_sleep_fn(struct k_timer *timer);
-K_TIMER_DEFINE(timer_enter_sleep, timer_enter_sleep_fn, NULL);
-
-static void timer_enter_sleep_fn(struct k_timer *timer)
+static void app_enter_sleep(uint32_t sleep_time_s)
 {
-    epd_sleep();
     tf_deinit();
+    epd_sleep();
+    pwr_set_sleep_timer_wakeup(sleep_time_s);
     pwr_enter_sleep(true);
 }
 
@@ -24,14 +22,11 @@ void app_mode_basic_handler(bool is_tf_init_failure)
 {
     LOG_DBG("Basic mode selected");
 
-    k_timer_stop(&timer_enter_sleep);
-
     int ret = show_pic_malloc(NULL);
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
-        pwr_set_sleep_timer_wakeup(24UL * 3600);
-        k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
+        app_enter_sleep(24UL * 3600);
     }
 
     if (is_tf_init_failure)
@@ -45,31 +40,22 @@ void app_mode_basic_handler(bool is_tf_init_failure)
 
     show_pic_free();
 
-    LOG_DBG("Basic mode finished, enter deep sleep after 15 seconds");
-    pwr_set_sleep_timer_wakeup(tf_get_carousel_interval());
-    k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
+    LOG_DBG("Basic mode finished, enter deep sleep after 2 seconds");
+    k_sleep(K_SECONDS(2));
 
-    // // 测试定时器问题
-    // k_sleep(K_SECONDS(15));
-    // epd_sleep();
-    // tf_deinit();
-    // pwr_enter_sleep(true);
-
+    app_enter_sleep(tf_get_carousel_interval());
 }
 
 void app_mode_server_handler(void)
 {
     LOG_DBG("Server mode selected");
 
-    k_timer_stop(&timer_enter_sleep);
-
     uint8_t *bmp_buf = NULL;
     int ret = show_pic_malloc(&bmp_buf);
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
-        pwr_set_sleep_timer_wakeup(24UL * 3600);
-        k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
+        app_enter_sleep(24UL * 3600);
     }
 
     wifi_init();
@@ -87,7 +73,8 @@ void app_mode_server_handler(void)
     http_server_stop();
     wifi_deinit1();
 
-    LOG_DBG("Server mode finished, enter deep sleep after 24 hours");
-    pwr_set_sleep_timer_wakeup(24UL * 3600);
-    k_timer_start(&timer_enter_sleep, K_SECONDS(15), K_NO_WAIT);
+    LOG_DBG("Server mode finished, enter deep sleep after 2 seconds");
+    k_sleep(K_SECONDS(2));
+
+    app_enter_sleep(24UL * 3600);
 }
