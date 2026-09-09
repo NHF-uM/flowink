@@ -46,8 +46,8 @@ Zephyr version: 4.4.2
 
 ## 代码使用和参考
 
-使用或参考以下开源代码：
-Multi_button：[0x1abin/MultiButton: Button driver for embedded system](https://github.com/0x1abin/MultiButton)
+Multi_button：
+[0x1abin/MultiButton: Button driver for embedded system](https://github.com/0x1abin/MultiButton)
 
 （微雪官方）BMP解码、BMP转墨水屏数据、HTTP网页构建相关代码：
 
