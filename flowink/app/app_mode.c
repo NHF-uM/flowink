@@ -14,6 +14,7 @@ static void app_enter_sleep(uint32_t sleep_time_s)
 {
     tf_deinit();
     epd_sleep();
+    k_sleep(K_MSEC(100));
     pwr_set_sleep_timer_wakeup(sleep_time_s);
     pwr_enter_sleep(true);
 }
@@ -26,7 +27,10 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
-        app_enter_sleep(24UL * 3600);
+        tf_deinit();
+        epd_sleep();
+        k_sleep(K_MSEC(100));
+        pwr_enter_sleep(false);
     }
 
     if (is_tf_init_failure)
@@ -41,8 +45,6 @@ void app_mode_basic_handler(bool is_tf_init_failure)
     show_pic_free();
 
     LOG_DBG("Basic mode finished, enter deep sleep after 2 seconds");
-    k_sleep(K_SECONDS(2));
-
     app_enter_sleep(tf_get_carousel_interval());
 }
 
@@ -55,7 +57,10 @@ void app_mode_server_handler(void)
     if (ret != 0)
     {
         LOG_ERR("no enough heap, enter deep sleep");
-        app_enter_sleep(24UL * 3600);
+        tf_deinit();
+        epd_sleep();
+        k_sleep(K_MSEC(100));
+        pwr_enter_sleep(false);
     }
 
     wifi_init();
@@ -74,7 +79,5 @@ void app_mode_server_handler(void)
     wifi_deinit1();
 
     LOG_DBG("Server mode finished, enter deep sleep after 2 seconds");
-    k_sleep(K_SECONDS(2));
-
     app_enter_sleep(24UL * 3600);
 }
