@@ -9,9 +9,13 @@ Release 目录下的`Instruction.md`有详细说明
 ### 硬件需求
 
 ESP32-S3-N16R8（对SPRAM大小有要求，具体未测试）
+
 元太7.3寸E6全彩墨水屏
+
 32GB TF卡（非牌子货可能不支持SPI读取，容量可缩减）
+
 闲鱼“记得带马扎”-50P墨水屏SPI转换器
+
 TF 卡模块（支持SPI接口）
 
 ### 引脚连接
@@ -36,6 +40,7 @@ TF 卡模块（支持SPI接口）
 ### 代码烧录
 
 烧录网站：https://wiki.wireless-tag.com/tools/?tool=flash
+
 烧录地址：0x0
 
 ## 开发环境
@@ -47,6 +52,7 @@ Zephyr version: 4.4.2
 ## 代码使用和参考
 
 Multi_button：
+
 [0x1abin/MultiButton: Button driver for embedded system](https://github.com/0x1abin/MultiButton)
 
 （微雪官方）BMP解码、BMP转墨水屏数据、HTTP网页构建相关代码：
