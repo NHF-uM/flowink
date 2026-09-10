@@ -111,7 +111,29 @@ if [ -n "$2" ]; then
 			echo "文件夹已删除: $DIR"
 			exit 0
 			;;
-			 
+		
+		r)
+            echo "Detect param = r, copy bin and elf to flowink/Release"
+            SRC_BIN=~/zephyrproject/flowink/build/zephyr/zephyr.bin
+            SRC_ELF=~/zephyrproject/flowink/build/zephyr/zephyr.elf
+            TGT_DIR=~/zephyrproject/flowink/Release
+
+            # 校验源文件是否存在
+            if [ ! -f "${SRC_BIN}" ]; then
+                echo "ERROR: ${SRC_BIN} not found! Please build first."
+                exit 1
+            fi
+            if [ ! -f "${SRC_ELF}" ]; then
+                echo "ERROR: ${SRC_ELF} not found! Please build first."
+                exit 1
+            fi
+
+            cp -v "${SRC_BIN}" "${TGT_DIR}/"
+            cp -v "${SRC_ELF}" "${TGT_DIR}/"
+            echo "Copy done! Output at: ${TGT_DIR}"
+            exit 0
+            ;;
+
         # 兜底：匹配 f/c 以外的所有参数
         *)
             echo "Error: Unknown parameter '$2', only support [f / c]"

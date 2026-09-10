@@ -8,7 +8,7 @@ Release 目录下的`Instruction.md`有详细说明
 
 ### 硬件需求
 
-ESP32-S3-N16R8（对SPRAM大小有要求，具体未测试）
+ESP32-S3-N16R8（PSRAM要求8MB，FLASH可以压缩到4MB）
 
 元太7.3寸E6全彩墨水屏
 
