@@ -27,9 +27,11 @@ static void enter_sleep_cb(void)
 static void clear_panel_cb(void)
 {
     LOG_DBG("Clear panel");
+    led_set(led_mode, false, K_NO_WAIT);
     led_set(led_pwr, true, K_MSEC(500));
     epd_show_color(EPD_COLOR_WHITE);
     led_set(led_pwr, true, K_FOREVER);
+    led_set(led_mode, true, K_MSEC(200));
 }
 
 /* 深度休眠会清空所有 RAM 数据和 PSRAM 数据*/
