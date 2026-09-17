@@ -2,7 +2,6 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include "pwr_manage.h"
-#include "rgb_strip.h"
 #include "net.h"
 #include "epd.h"
 #include "tf.h"

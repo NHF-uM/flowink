@@ -7,24 +7,26 @@ find_package(Python REQUIRED COMPONENTS Interpreter)
 
 project(flowink)
 
-zephyr_get(CONFIG_APP_ENABLE_TEST)
-if(NOT DEFINED CONFIG_APP_ENABLE_TEST)
-    set(CONFIG_APP_ENABLE_TEST OFF CACHE BOOL "Enable compile test folder code")
-endif()
-
-FILE(GLOB app_sources 
-    app/*.c
-    component/*.c
-    component/net/*.c
-    server/*.c
+target_sources(app PRIVATE
+    app/app_main.c
+    app/app_carousel.c
+    app/app_mode.c
+    app/show_picture.c
+    component/btn.c
+    component/epd.c
+    component/led.c
+    component/nv.c
+    component/pwr_manage.c
+    component/tf.c
+    component/net/http_server.c
+    component/net/wifi_ap_dhcp.c
+    server/multi_button.c
+    server/svc_bmp.c
 )
 
-if(CONFIG_APP_ENABLE_TEST)
-    FILE(GLOB test_sources test/*.c)
-    list(APPEND app_sources ${test_sources})
+if(CONFIG_LED_STRIP)
+    target_sources(app PRIVATE component/rgb_strip.c)
 endif()
-
-target_sources(app PRIVATE ${app_sources})
 
 target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/app
@@ -32,10 +34,6 @@ target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/component/net
     ${CMAKE_CURRENT_SOURCE_DIR}/server
 )
-
-if(CONFIG_APP_ENABLE_TEST)
-    target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test)
-endif()
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
@@ -76,12 +74,3 @@ generate_inc_file_for_target(app
     ${read_dir}/http/zkk.png
     ${gen_dir}/zkk.png.inc
 )
-
-if(CONFIG_APP_ENABLE_TEST)
-    set(read_dir_test ${CMAKE_CURRENT_SOURCE_DIR}/test/bmp_source/)
-
-    generate_inc_file_for_target(app
-        ${read_dir_test}/test.bmp
-        ${gen_dir}/test.bmp.inc
-)
-endif()

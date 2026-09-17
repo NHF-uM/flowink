@@ -5,13 +5,15 @@
 #include "led.h"
 #include "epd.h"
 #include "tf.h"
-#include "rgb_strip.h"
+#include "svc_bmp.h"
+#include "epd.h"
 #include "pwr_manage.h"
 #include "app_mode.h"
 #include "app_carousel.h"
 
-#include "svc_bmp.h"
-#include "epd.h"
+#ifdef CONFIG_LED_STRIP
+#include "rgb_strip.h"
+#endif
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
@@ -102,6 +104,8 @@ int main(void)
     return 0;
 }
 
+#ifdef CONFIG_LED_STRIP
+
 void rgb_strip_thread_entry(void)
 {
     while (1)
@@ -115,3 +119,5 @@ void rgb_strip_thread_entry(void)
 
 K_THREAD_DEFINE(rgb_strip_thread, 1024, rgb_strip_thread_entry, NULL, NULL, NULL,
                 7, 0, 0);
+
+#endif

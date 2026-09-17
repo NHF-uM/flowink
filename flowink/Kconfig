@@ -10,17 +10,14 @@ config WAKEUP_TIME_SEC
 	  This option sets the time in seconds after which the device
 	  will wake up from deep sleep. Defaults to 12 hours.
 
-menu "WS2812 Sample Configuration"
-
 config LED_STRIP_BRIGHTNESS
 	int "LED brightness"
 	default 3
 	range 1 255
+	depends on CONFIG_LED_STRIP
 	help
 	  Brightness level of each LED. Defaults to a low value to make
 	  it easier to distinguish colors.
-
-endmenu
 
 menu "NET Configuration"
 
