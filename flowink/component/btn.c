@@ -41,7 +41,6 @@ uint8_t read_btn(uint8_t button_id)
 
 static void btn_mode_clicked_cb(Button *btn, void *user_data)
 {
-	LOG_DBG("Button mode clicked");
 	is_server_mode = !is_server_mode;
 	k_event_set_masked(&btn_mode_event, is_server_mode ? BTN_BIT_MODE_SERVER : BTN_BIT_MODE_BASIC,
 					   BTN_BIT_MODE_ALL);
@@ -49,7 +48,6 @@ static void btn_mode_clicked_cb(Button *btn, void *user_data)
 
 static void btn_mode_long_press_cb(Button *btn, void *user_data)
 {
-	LOG_DBG("Button mode long pressed");
 	if (is_server_mode)
 	{
 		k_event_set_masked(&btn_mode_event, BTN_BIT_MODE_SERVER | BTN_BIT_MODE_SELECTED, BTN_BIT_MODE_ALL);
@@ -62,13 +60,11 @@ static void btn_mode_long_press_cb(Button *btn, void *user_data)
 
 static void btn_wakeup_clicked_cb(Button *btn, void *user_data)
 {
-	LOG_DBG("Button wakeup clicked");
 	k_event_post(&btn_mode_event, BTN_BIT_WAKEUP_CLICKED);
 }
 
 static void btn_wakeup_long_pressed_cb(Button *btn, void *user_data)
 {
-	LOG_DBG("Button wakeup long pressed");
 	k_event_post(&btn_mode_event, BTN_BIT_WAKEUP_LONG_PRESSED);
 }
 
@@ -93,6 +89,8 @@ void btn_init(void)
 		LOG_ERR("Error configuring button pin: %d", ret);
 		return;
 	}
+
+	/* 回调函数和 button_ticks() 会一起放到中断中执行 */
 	button_init(&btn_wakeup, read_btn, 1, 1);
 	button_attach(&btn_wakeup, BTN_SINGLE_CLICK, btn_wakeup_clicked_cb, NULL);
 	button_attach(&btn_wakeup, BTN_LONG_PRESS_START, btn_wakeup_long_pressed_cb, NULL);

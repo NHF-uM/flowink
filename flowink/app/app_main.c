@@ -62,14 +62,16 @@ int main(void)
 
         while (1)
         {
-            /* 这里要开启阻塞前清除标志位，因为软件定时器有自己的线程，所以事件会随时触发 */
+            /* 这里要开启阻塞前清除标志位，因为软件定时器中断实现，所以事件会随时触发 */
             uint32_t flags = k_event_wait(&btn_mode_event, BTN_BIT_MODE_ALL | BTN_BIT_WAKEUP_ALL, true, K_FOREVER);
             if (flags & BTN_BIT_WAKEUP_CLICKED)
             {
+                LOG_DBG("Wakeup button clicked");
                 enter_sleep_cb();
             }
             else if (flags & BTN_BIT_WAKEUP_LONG_PRESSED)
             {
+                LOG_DBG("Wakeup button long pressed");
                 clear_panel_cb();
             }
             else if (flags & BTN_BIT_MODE_SELECTED)
@@ -78,10 +80,12 @@ int main(void)
 
                 if (flags & BTN_BIT_MODE_BASIC)
                 {
+                    LOG_DBG("Basic mode selected");
                     app_mode_basic_handler(ret);
                 }
                 else if (flags & BTN_BIT_MODE_SERVER)
                 {
+                    LOG_DBG("Server mode selected");
                     app_mode_server_handler();
                 }
             }
