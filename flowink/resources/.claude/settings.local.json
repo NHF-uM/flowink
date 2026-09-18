@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/**)",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/**)",
+      "Read(///wsl.localhost/Ubuntu-24.04/home/nhf_um/zephyrproject/flowink/flowink/resources/http/**)",
+      "Bash(node --check script.js)",
+      "Bash(sed -n '80,106p' script.js)",
+      "Bash(sed -n '66,100p' script.js)",
+      "Bash(sed -n '430,485p' script.js)",
+      "Bash(sed -n '/<div class=\"menu_bar\">/,/<\\\\/div>$/p' index.html)",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(sed -n '40,120p' index.html)",
+      "Bash(node _minify.js)",
+      "Bash(sed -i 's/^const reTok = tokenize\\(js.code\\);/const toks = js.toks;\\\\nconst reTok = tokenize\\(js.code\\);/' _minify.js)",
+      "Bash(echo \"=== 产物语法 ===\")",
+      "Bash(node --check script.min.js)",
+      "Bash(echo \"  script.min.js 语法 OK\")",
+      "Bash(echo)",
+      "Bash(mv -f script.min.js script.js)",
+      "Bash(mv -f index.min.html index.html)",
+      "Bash(rm -f _minify.js)",
+      "Read(//tmp/**)",
+      "Bash(grep -o '$a\\('\\\\''Crop_Button'\\\\''\\)[^;]*;' script.js)"
+    ]
+  }
+}

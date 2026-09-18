@@ -6,32 +6,374 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>FlowInk Photographer</title>
     <style>
-        *{box-sizing:border-box}
-        body{margin:0;background:#fff;font-family:Verdana,Arial,sans-serif}
-        .container-wrap{width:auto;max-width:960px;margin:12px auto;background:#7dd4fa;border-radius:16px;padding:12px}
-        .title-text{font-size:clamp(26px,4vw,40px);text-align:center;margin:0 0 10px 0;font-weight:bold;color:#142ebe}
-        .main-row{display:flex;gap:12px;align-items:flex-start}
-        .menu_bar{width:250px;flex-shrink:0;background:#d2ecfc;border:2px solid #2748f5;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
-        .bottom-btn{width:100%;padding:11px 12px;background-color:#2748f5;border:none;border-radius:8px;color:white;font-size:16px;cursor:pointer;transition:0.2s ease}
-        .bottom-btn:hover{background-color:#142ebe}
-        .comment{color:#142ebe;font-size:15px;font-weight:bold}
-        .nud{width:66px;padding:5px 4px;border:1px solid #2748f5;border-radius:6px;text-align:center;font-size:15px}
-        .offset-row{display:flex;gap:6px;align-items:center}
-        .refresh-btn{padding:6px 12px;background-color:#2748f5;border:none;border-radius:6px;color:white;font-size:14px;cursor:pointer}
-        .slider-row{display:flex;flex-direction:column;gap:5px}
-        .slider-row .slider-head{display:flex;justify-content:space-between;align-items:center}
-        .slider-row label{font-size:14px;color:#142ebe;font-weight:bold}
-        .slider-row .slider-val{width:72px;padding:3px 4px;border:1px solid #2748f5;border-radius:5px;text-align:center;font-size:14px}
-        .slider-row input[type=range]{width:100%}
-        .avatar-box{text-align:center}
-        .avatar-box img{height:130px;width:auto;border-radius:10px;box-shadow:0 2px 8px #0003}
-        .content_body{flex:1;display:flex;flex-direction:column;gap:12px}
-        .img-panel{width:100%;background:#fff;border:2px solid #2244ff;border-radius:12px;padding:8px;text-align:center}
-        canvas#source{display:block;margin:0 auto;max-width:100%;max-height:34vh;height:auto}
-        #canvas{display:block;margin:0 auto;max-width:100%;max-height:70vh;height:auto}
-        @media (max-width:800px){
-            .main-row{flex-direction:column}
-            .menu_bar{width:100%}
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: #fff;
+            font-family: Verdana, Arial, sans-serif
+        }
+
+        .container-wrap {
+            width: auto;
+            max-width: 960px;
+            margin: 12px auto;
+            background: #7dd4fa;
+            border-radius: 16px;
+            padding: 12px
+        }
+
+        .title-text {
+            font-size: clamp(26px, 4vw, 40px);
+            text-align: center;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: #142ebe
+        }
+
+        .main-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start
+        }
+
+        .menu_bar {
+            width: 250px;
+            flex-shrink: 0;
+            background: #d2ecfc;
+            border: 2px solid #2748f5;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .bottom-btn {
+            width: 100%;
+            padding: 11px 12px;
+            background-color: #2748f5;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s ease
+        }
+
+        .bottom-btn:hover {
+            background-color: #142ebe
+        }
+
+        .bottom-btn.on {
+            background-color: #ffd400;
+            color: #142ebe
+        }
+
+        .comment {
+            color: #142ebe;
+            font-size: 15px;
+            font-weight: bold
+        }
+
+        .nud {
+            width: 66px;
+            padding: 5px 4px;
+            border: 1px solid #2748f5;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 15px
+        }
+
+        .offset-row {
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        .refresh-btn {
+            padding: 6px 12px;
+            background-color: #2748f5;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer
+        }
+
+        .fit-btn {
+            flex: 1;
+            padding: 7px 2px;
+            background-color: #2748f5;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: 0.2s ease
+        }
+
+        .fit-btn.on {
+            opacity: 1;
+            background-color: #142ebe;
+            box-shadow: 0 0 0 2px #ffd400 inset
+        }
+
+        .crop-info {
+            color: #142ebe;
+            font-size: 13px;
+            text-align: center
+        }
+
+        .panel {
+            background: #f4f9ff;
+            border: 1px solid #a8c8ff;
+            border-radius: 10px;
+            padding: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #142ebe;
+            text-align: center
+        }
+
+        .help {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ffd400;
+            color: #142ebe;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: help;
+            user-select: none;
+            opacity: 0.8;
+            transition: opacity 0.15s ease
+        }
+
+        .help:hover {
+            opacity: 1
+        }
+
+        .help::after {
+            content: attr(data-tip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            width: 190px;
+            padding: 7px 9px;
+            background: #142ebe;
+            color: #fff;
+            font-size: 12px;
+            font-weight: normal;
+            line-height: 1.5;
+            text-align: left;
+            white-space: pre-line;
+            border-radius: 7px;
+            box-shadow: 0 4px 12px #0004;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+            z-index: 20
+        }
+
+        .help-r::after {
+            left: auto;
+            right: -4px;
+            transform: none
+        }
+
+        .help-r::before {
+            left: auto;
+            right: 2px;
+            transform: none
+        }
+
+        .help::before {
+            content: '';
+            position: absolute;
+            top: calc(100% + 3px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-bottom-color: #142ebe;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+            z-index: 21
+        }
+
+        .help:hover::after,
+        .help:hover::before {
+            opacity: 1;
+            visibility: visible
+        }
+
+        .algo-note {
+            color: #142ebe;
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.35;
+            margin-top: -4px
+        }
+
+        /* 【修改点】「区域裁剪」去掉按钮背景，改回纯标题；用更大的字号（17px，比下方
+           起点/终点的 .comment 15px 大）+ 虚线下划线来建立层级区分 */
+        .crop-head {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #142ebe;
+            text-align: center;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed #bcd6ff
+        }
+
+        .btn-sm {
+            align-self: center;
+            padding: 7px 18px;
+            background-color: #2748f5;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s ease
+        }
+
+        .btn-sm:hover {
+            background-color: #142ebe
+        }
+
+        .btn-help-row {
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .btn-help-row .bottom-btn {
+            flex: 1;
+            width: auto
+        }
+
+        .crop-group {
+            background: #ffffff;
+            border: 1px dashed #7fa7ff;
+            border-radius: 8px;
+            padding: 7px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px
+        }
+
+        .slider-row .slider-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .slider-row label {
+            font-size: 14px;
+            color: #142ebe;
+            font-weight: bold
+        }
+
+        .slider-row .slider-val {
+            width: 72px;
+            padding: 3px 4px;
+            border: 1px solid #2748f5;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px
+        }
+
+        .slider-row input[type=range] {
+            width: 100%
+        }
+
+        .avatar-box {
+            text-align: center
+        }
+
+        .avatar-box img {
+            height: 130px;
+            width: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #0003
+        }
+
+        .content_body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .img-panel {
+            width: 100%;
+            background: #fff;
+            border: 2px solid #2244ff;
+            border-radius: 12px;
+            padding: 8px;
+            text-align: center
+        }
+
+        canvas#source {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 34vh;
+            height: auto;
+            cursor: crosshair;
+            touch-action: none
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            max-height: 70vh;
+            height: auto
+        }
+
+        @media (max-width:800px) {
+            .main-row {
+                flex-direction: column
+            }
+
+            .menu_bar {
+                width: 100%
+            }
         }
     </style>
 </head>
@@ -40,44 +382,66 @@
     <div class="container-wrap">
         <p class="title-text">FlowInk Photographer</p>
         <div class="main-row">
-            <div class="menu_bar">
-                <button class="bottom-btn" id="Input_Button" type="button">选择图片</button>
-                <input type="file" id="File_Input" accept="image/*" hidden>
-                <button class="bottom-btn" id="Lvl_Button" type="button">阈值转换</button>
-                <button class="bottom-btn" id="Dif_Button" type="button">扩散转换</button>
-                <button class="bottom-btn" id="Send_Button" type="button">上传图片</button>
-                <span class="comment">裁剪偏移</span>
-                <div class="offset-row">
-                    <label class="comment">x</label>
-                    <input id="nud_x" class="nud" type="number" value="0">
-                    <label class="comment">y</label>
-                    <input id="nud_y" class="nud" type="number" value="0">
+            <div class="menu_bar"><button class="bottom-btn" id="Input_Button" type="button">选择图片</button><input
+                    type="file" id="File_Input" accept="image/*" hidden>
+                <div class="panel">
+                    <div class="panel-title">算法<span class="help" data-tip="算法选择后需要经过下方转换才会生效">?</span></div>
+                    <div class="btn-help-row"><button class="bottom-btn" id="Lvl_Button"
+                            type="button">阈值算法</button><span class="help help-r"
+                            data-tip="阈值算法｜边缘锐利、渐变生硬&#10;适合：线条图、文字、图标、截图">?</span></div>
+                    <div class="btn-help-row"><button class="bottom-btn" id="Dif_Button"
+                            type="button">扩散算法</button><span class="help help-r"
+                            data-tip="扩散算法｜颜色过渡更自然柔和&#10;适合：照片、渐变、有明暗层次的图">?</span></div>
                 </div>
-                <div class="offset-row">
-                    <button class="refresh-btn" id="Refresh_Btn" type="button">刷新边框</button>
+                <div class="panel">
+                    <div class="panel-title">转换方式</div>
+                    <div class="crop-group">
+                        <div class="crop-head">区域裁剪<span class="help"
+                                data-tip="方式1️⃣：直接在图上框选&#10;方式2️⃣：确定起点和终点坐标，并点击下方裁剪按钮">?</span></div><span
+                            class="crop-info" id="img_info">原图 --×--</span><span class="crop-info" id="crop_info">框选
+                            --×--</span>
+                        <div class="offset-row"><label class="comment">起点</label><input id="nud_x1" class="nud"
+                                type="number" min="0" value="0"><input id="nud_y1" class="nud" type="number" min="0"
+                                value="0"></div>
+                        <div class="offset-row"><label class="comment">终点</label><input id="nud_x2" class="nud"
+                                type="number" min="0" value="800"><input id="nud_y2" class="nud" type="number" min="0"
+                                value="480"></div><!-- 【修改点】「裁剪」按缩放方式按钮的尺寸做小，仍执行裁剪转换 -->
+                        <button class="btn-sm" id="Crop_Button" type="button">裁剪</button>
+                    </div><button class="bottom-btn" id="Full_Button" type="button">全图转换</button>
                 </div>
-                <span class="comment">调节</span>
-                <div class="slider-row">
-                    <div class="slider-head"><label>亮度</label><input class="slider-val" id="val_bright" type="number" value="0"></div>
-                    <input id="nud_bright" type="range" min="-128" max="128" value="0">
+                <div class="panel">
+                    <div class="panel-title">缩放方式</div>
+                    <div class="offset-row"><button class="fit-btn" id="Fit_Stretch" type="button">拉伸铺满</button><button
+                            class="fit-btn" id="Fit_Contain" type="button">等比白边</button><button class="fit-btn"
+                            id="Fit_Cover" type="button">等比裁切</button></div>
                 </div>
-                <div class="slider-row">
-                    <div class="slider-head"><label>对比度</label><input class="slider-val" id="val_cont" type="number" value="1" step="0.01"></div>
-                    <input id="nud_cont" type="range" min="0.5" max="1.5" step="0.01" value="1">
-                </div>
-                <div class="slider-row" id="row_mono" style="display:none">
-                    <div class="slider-head"><label>黑白权重</label><input class="slider-val" id="val_mono" type="number" value="0"></div>
-                    <input id="nud_mono" type="range" min="-100" max="100" value="0">
-                </div>
-                <div class="slider-row" id="row_err" style="display:none">
-                    <div class="slider-head"><label>扩散权重</label><input class="slider-val" id="val_err" type="number" value="1" step="0.01"></div>
-                    <input id="nud_err" type="range" min="0" max="2" step="0.01" value="1">
-                </div>
+                <div class="panel">
+                    <div class="panel-title">调节</div>
+                    <div class="slider-row">
+                        <div class="slider-head"><label>亮度</label><input class="slider-val" id="val_bright"
+                                type="number" value="0"></div><input id="nud_bright" type="range" min="-128" max="128"
+                            value="0">
+                    </div>
+                    <div class="slider-row">
+                        <div class="slider-head"><label>对比度</label><input class="slider-val" id="val_cont" type="number"
+                                value="1" step="0.01"></div><input id="nud_cont" type="range" min="0.5" max="1.5"
+                            step="0.01" value="1">
+                    </div>
+                    <div class="slider-row" id="row_mono" style="display:none">
+                        <div class="slider-head"><label>黑白权重</label><input class="slider-val" id="val_mono"
+                                type="number" value="0"></div><input id="nud_mono" type="range" min="-100" max="100"
+                            value="0">
+                    </div>
+                    <div class="slider-row" id="row_err" style="display:none">
+                        <div class="slider-head"><label>扩散权重</label><input class="slider-val" id="val_err" type="number"
+                                value="1" step="0.01"></div><input id="nud_err" type="range" min="0" max="2" step="0.01"
+                            value="1">
+                    </div>
+                </div><button class="bottom-btn" id="Send_Button" type="button">上传图片</button>
                 <div class="avatar-box"><img src="./zkk.png" alt="zkk"></div>
             </div>
             <div class="content_body">
-                <div class="img-panel">
-                    <canvas id="source" class="hidden_input" hidden></canvas>
+                <div class="img-panel"><canvas id="source" class="hidden_input" hidden></canvas>
                     <div id="srcBox"></div>
                 </div>
                 <div class="img-panel" id="dstBox"></div>

@@ -1,308 +1,566 @@
-/* 融合 new_http scriptA~D + http 上传流程，2026-08-29 */
-/* 全局状态 */
-var srcImg = null;          /* 已载入的原始图片对象 */
-var dX = 0, dY = 0;         /* 裁剪偏移 */
-var curPal = [[0,0,0],[255,255,255],[255,255,0],[255,0,0],[0,0,255],[0,255,0]]; /* 7.3E 六色 */
-var curAlgo = null;         /* 'lvl' | 'dif' */
-var dW = 800, dH = 480;     /* 7.3E 面板 */
+var $b = null;
+var dX = 0, dY = 0;
+var $t = [
+    [0, 0, 0],
+    [255, 255, 255],
+    [255, 255, 0],
+    [255, 0, 0],
+    [0, 0, 255],
+    [0, 255, 0]
+];
+var $d = 'lvl';
+var dW = 800, dH = 480;
+var $h = 800, $o = 480;
+var $N = 'stretch';
+var $f = false;
+var $x = false, $E = 0, $F = 0, $y = 0, $z = 0, $p = 0;
 
-function getElm(n){return document.getElementById(n);}
+function $a(n) {
+    return document.getElementById(n);
+}
 
-/* ---------- 图片载入（拖拽或选择） ---------- */
-function processFiles(files){
-    var file = files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e){
+function $u(files) {
+    var $ap = files[0];
+    if (!$ap) return;
+    var $ad = new FileReader();
+    $ad.onload = function (e) {
         var img = new Image();
-        img.onload = function(){ srcImg = toLandscape(img); drawSrc(); };
+        img.onload = function () {
+            $b = $J(img);
+            $ak();
+        };
         img.src = e.target.result;
     };
-    reader.readAsDataURL(file);
+    $ad.readAsDataURL($ap);
 }
-function drop(e){e.stopPropagation();e.preventDefault();processFiles(e.dataTransfer.files);}
-function ignoreDrag(e){e.stopPropagation();e.preventDefault();}
 
-/* 竖图旋转为横图，统一走 800x480 横向裁剪流程（返回 canvas，避免异步加载时序问题） */
-function toLandscape(img){
-    if(img.height <= img.width) return img;
+function $at(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    $u(e.dataTransfer.files);
+}
+
+function $B(e) {
+    e.stopPropagation();
+    e.preventDefault();
+}
+
+function $J(img) {
+    if (img.height <= img.width) return img;
     var rot = document.createElement('canvas');
     rot.width = img.height;
     rot.height = img.width;
-    var rctx = rot.getContext('2d');
-    rctx.translate(rot.width,0);
-    rctx.rotate(Math.PI/2);
-    rctx.drawImage(img,0,0);
+    var $al = rot.getContext('2d');
+    $al.translate(rot.width, 0);
+    $al.rotate(Math.PI / 2);
+    $al.drawImage(img, 0, 0);
     return rot;
 }
 
-/* ---------- 原图展示 + 裁剪偏移边框 ---------- */
-function drawSrc(){
-    var src = getElm('source');
-    src.width = srcImg.width;
-    src.height = srcImg.height;
+function $ak() {
+    var src = $a('source');
+    src.width = $b.width;
+    src.height = $b.height;
     src.style.display = 'block';
-    src.getContext('2d').drawImage(srcImg,0,0);
-    getElm('srcBox').innerHTML = '';
-    drawCropBox();
+    src.getContext('2d').drawImage($b, 0, 0);
+    $a('srcBox').innerHTML = '';
+    $a('nud_x1').max = $b.width;
+    $a('nud_x2').max = $b.width;
+    $a('nud_y1').max = $b.height;
+    $a('nud_y2').max = $b.height;
+    $a('nud_x1').value = 0;
+    $a('nud_y1').value = 0;
+    $a('nud_x2').value = $b.width;
+    $a('nud_y2').value = $b.height;
+    dX = 0;
+    dY = 0;
+    dW = $b.width;
+    dH = $b.height;
+    $l();
+    $e();
 }
-function drawCropBox(){
-    var src = getElm('source');
-    if(!src.width||!srcImg) return;
-    src.getContext('2d').drawImage(srcImg,0,0);
-    var kx = src.width  / srcImg.width; /* 显示缩放比例 */
-    var ky = src.height / srcImg.height;
-    var ctx = src.getContext('2d');
-    ctx.strokeStyle = '#ff0000';
-    ctx.lineWidth = Math.max(1, Math.min(kx,ky) * 2);
-    ctx.strokeRect(clampX()*kx, clampY()*ky, dW*kx, dH*ky);
-}
-/* 偏移夹紧到图片范围内，避免红框/结果溢出 */
-function clampX(){ return Math.max(0, Math.min(dX, srcImg.width  - dW)); }
-function clampY(){ return Math.max(0, Math.min(dY, srcImg.height - dH)); }
 
-/* ---------- 亮度/对比度预处理（优先读取数值框，支持手填） ---------- */
-function preProcess(p){
-    var bright = parseFloat(getElm('val_bright').value)||0;
-    var cont   = parseFloat(getElm('val_cont').value);
-    if(!(cont>0)) cont = 1;
-    if(bright===0 && cont===1) return;
-    var n = p.data.length;
-    for(var i=0;i<n;i+=4){
-        p.data[i]   = Math.max(0,Math.min(255,(p.data[i]  -128)*cont + 128 + bright));
-        p.data[i+1] = Math.max(0,Math.min(255,(p.data[i+1]-128)*cont + 128 + bright));
-        p.data[i+2] = Math.max(0,Math.min(255,(p.data[i+2]-128)*cont + 128 + bright));
+function $e(box) {
+    var src = $a('source');
+    if (!src.width || !$b) return;
+    var ctx = src.getContext('2d');
+    ctx.drawImage($b, 0, 0);
+    var b = box || { x: dX, y: dY, w: dW, h: dH };
+    var $au = src.clientWidth || src.width;
+    var lw = Math.max(1, Math.round(2 * src.width / $au));
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0, 0, src.width, b.y);
+    ctx.fillRect(0, b.y + b.h, src.width, src.height - (b.y + b.h));
+    ctx.fillRect(0, b.y, b.x, b.h);
+    ctx.fillRect(b.x + b.w, b.y, src.width - (b.x + b.w), b.h);
+    if (b.w > lw && b.h > lw) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = lw;
+        ctx.setLineDash(box ? [lw * 3, lw * 2] : []);
+        ctx.strokeRect(b.x + lw / 2, b.y + lw / 2, b.w - lw, b.h - lw);
+        ctx.setLineDash([]);
     }
 }
 
-/* ---------- 颜色匹配 ---------- */
-function getErr(r,g,b,c){r-=c[0];g-=c[1];b-=c[2];return r*r+g*g+b*b;}
-function getNear(r,g,b){
+function $l() {
+    if (!$b) return;
+    var r = $r();
+    $a('img_info').textContent = '原图 ' + $b.width + '×' + $b.height;
+    $a('crop_info').textContent = '框选 ' + r.w + '×' + r.h;
+}
+
+/* 【修改点】updateBtnState 只维护「算法」组两个按钮。
+   【删除】原第 115 行 $a('Crop_Button').className = 'bottom-btn' + ($f ? '' : ' on');
+           与第 116 行 $a('Full_Button') 的范围高亮 —— 赋值 className 是整体覆盖，
+           会把 Crop_Button 在 HTML 里写的 .btn-sm 冲成 .bottom-btn，
+           导致页面 onload 后（以及每次转换后）按钮从小按钮突变成全宽大黄按钮。
+           范围组取消高亮，改为由「全图转换」按钮本身的状态体现。 */
+function $m() {
+    $a('Lvl_Button').className = 'bottom-btn' + ($d === 'lvl' ? ' on' : '');
+    $a('Dif_Button').className = 'bottom-btn' + ($d === 'dif' ? ' on' : '');
+}
+
+function $S(a) {
+    $d = a;
+    $n(a);
+    $m();
+}
+
+function $K(e) {
+    var $C = $a('source').getBoundingClientRect();
+    var x = Math.round((e.clientX - $C.left) * $b.width / $C.width);
+    var y = Math.round((e.clientY - $C.top) * $b.height / $C.height);
+    return {
+        x: Math.max(0, Math.min($b.width, x)),
+        y: Math.max(0, Math.min($b.height, y))
+    };
+}
+
+function $T() {
+    return {
+        x: Math.min($E, $y),
+        y: Math.min($F, $z),
+        w: Math.abs($y - $E),
+        h: Math.abs($z - $F)
+    };
+}
+
+function $Y(e) {
+    if (!$b) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    var p = $K(e);
+    $x = true;
+    $E = $y = p.x;
+    $F = $z = p.y;
+    $a('source').setPointerCapture(e.pointerId);
+    e.preventDefault();
+}
+
+function $Z(e) {
+    if (!$x) return;
+    var p = $K(e);
+    $y = p.x;
+    $z = p.y;
+    if ($p) return;
+    $p = requestAnimationFrame(function () {
+        $p = 0;
+        $e($T());
+    });
+    e.preventDefault();
+}
+
+function $U(e) {
+    if (!$x) return;
+    $x = false;
+    if ($p) {
+        cancelAnimationFrame($p);
+        $p = 0;
+    }
+    var b = $T();
+    if (b.w < 2 || b.h < 2) {
+        $e();
+        return;
+    }
+    $a('nud_x1').value = b.x;
+    $a('nud_y1').value = b.y;
+    $a('nud_x2').value = b.x + b.w;
+    $a('nud_y2').value = b.y + b.h;
+    dX = b.x;
+    dY = b.y;
+    dW = b.w;
+    dH = b.h;
+    $e();
+    $l();
+    $k($d, false);
+    e.preventDefault();
+}
+
+function $r() {
+    var x1 = parseInt($a('nud_x1').value) || 0;
+    var y1 = parseInt($a('nud_y1').value) || 0;
+    var x2 = parseInt($a('nud_x2').value) || 0;
+    var y2 = parseInt($a('nud_y2').value) || 0;
+    return {
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        w: Math.max(1, Math.abs(x2 - x1)),
+        h: Math.max(1, Math.abs(y2 - y1))
+    };
+}
+
+function $L(r) {
+    var cv = document.createElement('canvas');
+    cv.width = $h;
+    cv.height = $o;
+    var cx = cv.getContext('2d');
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = 'high';
+    if ($N === 'contain') {
+        var sc = Math.min($h / r.w, $o / r.h);
+        var cw = Math.floor(r.w * sc), chh = Math.floor(r.h * sc);
+        cx.fillStyle = '#ffffff';
+        cx.fillRect(0, 0, $h, $o);
+        cx.drawImage($b, r.x, r.y, r.w, r.h, Math.floor(($h - cw) / 2), Math.floor(($o - chh) / 2), cw, chh);
+    } else if ($N === 'cover') {
+        var sd = Math.max($h / r.w, $o / r.h);
+        var sw = Math.min(r.w, $h / sd), sh = Math.min(r.h, $o / sd);
+        cx.drawImage($b, r.x + (r.w - sw) / 2, r.y + (r.h - sh) / 2, sw, sh, 0, 0, $h, $o);
+    } else {
+        cx.drawImage($b, r.x, r.y, r.w, r.h, 0, 0, $h, $o);
+    }
+    return cv;
+}
+
+function $O(p) {
+    var $G = parseFloat($a('val_bright').value) || 0;
+    var $aa = parseFloat($a('val_cont').value);
+    if (!($aa > 0)) $aa = 1;
+    if ($G === 0 && $aa === 1) return;
+    var n = p.data.length;
+    for (var i = 0; i < n; i += 4) {
+        p.data[i] = Math.max(0, Math.min(255, (p.data[i] - 128) * $aa + 128 + $G));
+        p.data[i + 1] = Math.max(0, Math.min(255, (p.data[i + 1] - 128) * $aa + 128 + $G));
+        p.data[i + 2] = Math.max(0, Math.min(255, (p.data[i + 2] - 128) * $aa + 128 + $G));
+    }
+}
+
+function $af(r, g, b, c) {
+    r -= c[0];
+    g -= c[1];
+    b -= c[2];
+    return r * r + g * g + b * b;
+}
+
+function $V(r, g, b) {
     var monoScale = 1;
-    if(curAlgo==='lvl') monoScale = 1 - (parseFloat(getElm('val_mono').value)||0)/100*0.5;
+    if ($d === 'lvl') monoScale = 1 - (parseFloat($a('val_mono').value) || 0) / 100 * 0.5;
     var ind = 0;
-    var err = getErr(r,g,b,curPal[0]) * (ind<2?monoScale:1);
-    for(var i=1;i<curPal.length;i++){
-        var e = getErr(r,g,b,curPal[i]) * (i<2?monoScale:1);
-        if(e<err){err=e;ind=i;}
+    var err = $af(r, g, b, $t[0]) * (ind < 2 ? monoScale : 1);
+    for (var i = 1; i < $t.length; i++) {
+        var e = $af(r, g, b, $t[i]) * (i < 2 ? monoScale : 1);
+        if (e < err) {
+            err = e;
+            ind = i;
+        }
     }
     return ind;
 }
-function setVal(p,i,c){
-    p.data[i]=curPal[c][0];p.data[i+1]=curPal[c][1];p.data[i+2]=curPal[c][2];p.data[i+3]=255;
+
+function $am(p, i, c) {
+    p.data[i] = $t[c][0];
+    p.data[i + 1] = $t[c][1];
+    p.data[i + 2] = $t[c][2];
+    p.data[i + 3] = 255;
 }
-function addVal(c,r,g,b,k){
-    return [c[0]+(r*k)/32,c[1]+(g*k)/32,c[2]+(b*k)/32];
+
+function $q(c, r, g, b, k) {
+    return [c[0] + (r * k) / 32, c[1] + (g * k) / 32, c[2] + (b * k) / 32];
 }
 
-/* ---------- 裁剪采样 + 转换 ---------- */
-function procImg(algo){
-    if(!srcImg){alert('First select image');return;}
-    curAlgo = algo;
-    getElm('dstBox').innerHTML = '<canvas id="canvas"></canvas>';
-    var canvas = getElm('canvas');
-    canvas.width = dW;
-    canvas.height = dH;
-    dX = Math.max(0, parseInt(getElm('nud_x').value)||0);
-    dY = Math.max(0, parseInt(getElm('nud_y').value)||0);
-    dX = clampX(); /* 夹紧到图片范围内，与红框一致 */
-    dY = clampY();
-
-    var src = getElm('source');
-    var sW = src.width, sH = src.height;
-    /* 采样前强制覆盖干净原图，防止显示用的红线污染转换结果 */
-    src.getContext('2d').drawImage(srcImg,0,0);
-    var pSrc = src.getContext('2d').getImageData(0,0,sW,sH);
-    preProcess(pSrc);
-    var pDst = canvas.getContext('2d').getImageData(0,0,dW,dH);
-    var index = 0;
-
-    if(algo==='lvl'){
-        for(var j=0;j<dH;j++){
-            var y = dY+j;
-            if(y<0||y>=sH){for(var i=0;i<dW;i++,index+=4)setVal(pDst,index,(i+j)%2==0?1:0);continue;}
-            for(var i=0;i<dW;i++){
-                var x = dX+i;
-                if(x<0||x>=sW){setVal(pDst,index,(i+j)%2==0?1:0);index+=4;continue;}
-                var pos = (y*sW+x)*4;
-                setVal(pDst,index,getNear(pSrc.data[pos],pSrc.data[pos+1],pSrc.data[pos+2]));
-                index+=4;
+function $k(algo, full) {
+    if (!$b) {
+        alert('First select image');
+        return;
+    }
+    $d = algo;
+    $f = !!full;
+    $m();
+    var $C = full ? { x: 0, y: 0, w: $b.width, h: $b.height } : $r();
+    dX = $C.x;
+    dY = $C.y;
+    dW = $C.w;
+    dH = $C.h;
+    $a('dstBox').innerHTML = '<canvas id="canvas"></canvas>';
+    var $H = $a('canvas');
+    $H.width = $h;
+    $H.height = $o;
+    var mid = $L($C);
+    var $P = mid.getContext('2d').getImageData(0, 0, $h, $o);
+    $O($P);
+    var $ab = $H.getContext('2d').getImageData(0, 0, $h, $o);
+    var $D = 0;
+    if (algo === 'lvl') {
+        for (var j = 0; j < $o; j++) {
+            for (var i = 0; i < $h; i++) {
+                var pos = (j * $h + i) * 4;
+                $am($ab, $D, $V($P.data[pos], $P.data[pos + 1], $P.data[pos + 2]));
+                $D += 4;
             }
         }
-    }else{
-        var errScale = parseFloat(getElm('val_err').value);
-        var aInd=0, bInd=1;
-        var errArr = [new Array(dW),new Array(dW)];
-        for(var i=0;i<dW;i++) errArr[bInd][i]=[0,0,0];
-        for(var j=0;j<dH;j++){
-            var y = dY+j;
-            if(y<0||y>=sH){for(var i=0;i<dW;i++,index+=4)setVal(pDst,index,(i+j)%2==0?1:0);continue;}
-            aInd=((bInd=aInd)+1)&1;
-            for(var i=0;i<dW;i++) errArr[bInd][i]=[0,0,0];
-            for(var i=0;i<dW;i++){
-                var x = dX+i;
-                if(x<0||x>=sW){setVal(pDst,index,(i+j)%2==0?1:0);index+=4;continue;}
-                var pos = (y*sW+x)*4;
-                var old = errArr[aInd][i];
-                var r = pSrc.data[pos  ]+old[0];
-                var g = pSrc.data[pos+1]+old[1];
-                var b = pSrc.data[pos+2]+old[2];
-                var colVal = curPal[getNear(r,g,b)];
-                pDst.data[index++]=colVal[0];
-                pDst.data[index++]=colVal[1];
-                pDst.data[index++]=colVal[2];
-                pDst.data[index++]=255;
-                r=(r-colVal[0]);g=(g-colVal[1]);b=(b-colVal[2]);
-                if(i==0){
-                    errArr[bInd][i  ]=addVal(errArr[bInd][i  ],r,g,b,7.0*errScale);
-                    errArr[bInd][i+1]=addVal(errArr[bInd][i+1],r,g,b,2.0*errScale);
-                    errArr[aInd][i+1]=addVal(errArr[aInd][i+1],r,g,b,7.0*errScale);
-                }else if(i==dW-1){
-                    errArr[bInd][i-1]=addVal(errArr[bInd][i-1],r,g,b,7.0*errScale);
-                    errArr[bInd][i  ]=addVal(errArr[bInd][i  ],r,g,b,9.0*errScale);
-                }else{
-                    errArr[bInd][i-1]=addVal(errArr[bInd][i-1],r,g,b,3.0*errScale);
-                    errArr[bInd][i  ]=addVal(errArr[bInd][i  ],r,g,b,5.0*errScale);
-                    errArr[bInd][i+1]=addVal(errArr[bInd][i+1],r,g,b,1.0*errScale);
-                    errArr[aInd][i+1]=addVal(errArr[aInd][i+1],r,g,b,7.0*errScale);
+    } else {
+        var $i = parseFloat($a('val_err').value);
+        var $Q = 0, $s = 1;
+        var $c = [new Array($h), new Array($h)];
+        for (var i = 0; i < $h; i++) $c[$s][i] = [0, 0, 0];
+        for (var j = 0; j < $o; j++) {
+            $Q = (($s = $Q) + 1) & 1;
+            for (var i = 0; i < $h; i++) $c[$s][i] = [0, 0, 0];
+            for (var i = 0; i < $h; i++) {
+                var pos = (j * $h + i) * 4;
+                var old = $c[$Q][i];
+                var r = $P.data[pos] + old[0];
+                var g = $P.data[pos + 1] + old[1];
+                var b = $P.data[pos + 2] + old[2];
+                var $v = $t[$V(r, g, b)];
+                $ab.data[$D++] = $v[0];
+                $ab.data[$D++] = $v[1];
+                $ab.data[$D++] = $v[2];
+                $ab.data[$D++] = 255;
+                r = (r - $v[0]);
+                g = (g - $v[1]);
+                b = (b - $v[2]);
+                if (i == 0) {
+                    $c[$s][i] = $q($c[$s][i], r, g, b, 7.0 * $i);
+                    $c[$s][i + 1] = $q($c[$s][i + 1], r, g, b, 2.0 * $i);
+                    $c[$Q][i + 1] = $q($c[$Q][i + 1], r, g, b, 7.0 * $i);
+                } else if (i == $h - 1) {
+                    $c[$s][i - 1] = $q($c[$s][i - 1], r, g, b, 7.0 * $i);
+                    $c[$s][i] = $q($c[$s][i], r, g, b, 9.0 * $i);
+                } else {
+                    $c[$s][i - 1] = $q($c[$s][i - 1], r, g, b, 3.0 * $i);
+                    $c[$s][i] = $q($c[$s][i], r, g, b, 5.0 * $i);
+                    $c[$s][i + 1] = $q($c[$s][i + 1], r, g, b, 1.0 * $i);
+                    $c[$Q][i + 1] = $q($c[$Q][i + 1], r, g, b, 7.0 * $i);
                 }
             }
         }
     }
-    canvas.getContext('2d').putImageData(pDst,0,0);
-    drawCropBox(); /* 转换完成后把裁剪边框重新画回原图显示层 */
+    $H.getContext('2d').putImageData($ab, 0, 0);
+    $e();
 }
 
-/* ---------- 生成 24 位 BMP ---------- */
-function buildBMP(){
-    var c = getElm('canvas');
+function $ag() {
+    var c = $a('canvas');
     var w = c.width, h = c.height;
-    var p = c.getContext('2d').getImageData(0,0,w,h);
-    var row = (w*3+3)&~3;
-    var sz = 54 + row*h;
+    var p = c.getContext('2d').getImageData(0, 0, w, h);
+    var row = (w * 3 + 3) & ~3;
+    var sz = 54 + row * h;
     var buf = new ArrayBuffer(sz);
     var dv = new DataView(buf);
-    dv.setUint8(0,0x42); dv.setUint8(1,0x4D);          /* 'BM' */
-    dv.setUint32(2,sz,true);                           /* 文件大小 */
-    dv.setUint32(10,54,true);                          /* 像素数据偏移 */
-    dv.setUint32(14,40,true);                          /* DIB 头大小 */
-    dv.setInt32(18,w,true);
-    dv.setInt32(22,h,true);
-    dv.setUint16(26,1,true);                           /* 色彩平面数 */
-    dv.setUint16(28,24,true);                          /* 每像素 24 位 */
-    dv.setUint32(30,0,true);                           /* 未压缩 */
-    var view = new Uint8Array(buf,54);
+    dv.setUint8(0, 0x42);
+    dv.setUint8(1, 0x4D);
+    dv.setUint32(2, sz, true);
+    dv.setUint32(10, 54, true);
+    dv.setUint32(14, 40, true);
+    dv.setInt32(18, w, true);
+    dv.setInt32(22, h, true);
+    dv.setUint16(26, 1, true);
+    dv.setUint16(28, 24, true);
+    dv.setUint32(30, 0, true);
+    var $ao = new Uint8Array(buf, 54);
     var idx = 0;
-    for(var y=0;y<h;y++){
-        var line = (h-1-y)*w*4;                        /* BMP 自底向上，取倒数第 y 行 */
+    for (var y = 0; y < h; y++) {
+        var $ay = (h - 1 - y) * w * 4;
         var off = 0;
-        for(var x=0;x<w;x++){
-            var i = line+x*4;
-            view[idx+off+0]=p.data[i+2];               /* B */
-            view[idx+off+1]=p.data[i+1];               /* G */
-            view[idx+off+2]=p.data[i];                 /* R */
-            off+=3;
+        for (var x = 0; x < w; x++) {
+            var i = $ay + x * 4;
+            $ao[idx + off + 0] = p.data[i + 2];
+            $ao[idx + off + 1] = p.data[i + 1];
+            $ao[idx + off + 2] = p.data[i];
+            off += 3;
         }
         idx += row;
     }
     return buf;
 }
 
-/* ---------- 上传（对齐 http 版流程：相对路径/进度/loading/超时） ---------- */
-var uploadLoading = null;
-function createLoadingTip(){
-    var div = document.createElement('div');
-    div.id = "upload-tip";
-    div.style.position='fixed';div.style.top='50%';div.style.left='50%';
-    div.style.transform='translate(-50%,-50%)';
-    div.style.background='rgba(0,0,0,0.75)';div.style.color='#fff';
-    div.style.padding='24px 40px';div.style.borderRadius='8px';
-    div.style.zIndex='9999';div.style.fontSize='16px';
-    div.textContent='正在上传，请耐心等待...';
-    document.body.appendChild(div);
-    return div;
+var $g = null;
+
+function $w() {
+    var $W = document.createElement('div');
+    $W.id = "upload-tip";
+    $W.style.position = 'fixed';
+    $W.style.top = '50%';
+    $W.style.left = '50%';
+    $W.style.transform = 'translate(-50%,-50%)';
+    $W.style.background = 'rgba(0,0,0,0.75)';
+    $W.style.color = '#fff';
+    $W.style.padding = '24px 40px';
+    $W.style.borderRadius = '8px';
+    $W.style.zIndex = '9999';
+    $W.style.fontSize = '16px';
+    $W.textContent = '正在上传，请耐心等待...';
+    document.body.appendChild($W);
+    return $W;
 }
-function removeLoadingTip(){if(uploadLoading){document.body.removeChild(uploadLoading);uploadLoading=null;}}
-function uploadImage(){
-    if(!curAlgo||!getElm('canvas')){alert('请先选择图片并执行一次转换');return;}
-    var sendBtn = getElm('Send_Button');
-    uploadLoading = createLoadingTip();
-    sendBtn.disabled = true;
+
+function $j() {
+    if ($g) {
+        document.body.removeChild($g);
+        $g = null;
+    }
+}
+
+function $M() {
+    if (!$d || !$a('canvas')) {
+        alert('请先选择图片并执行一次转换');
+        return;
+    }
+    var $A = $a('Send_Button');
+    $g = $w();
+    $A.disabled = true;
     var xhr = new XMLHttpRequest();
-    xhr.open('POST','/dataUP');
-    xhr.setRequestHeader('Content-Type','image/bmp');
-    xhr.upload.onprogress = function(ev){
-        if(!ev.lengthComputable) return;
-        var pct = (ev.loaded/ev.total*100).toFixed(1);
-        uploadLoading.textContent = '正在上传 '+pct+'%';
+    xhr.open('POST', '/dataUP');
+    xhr.setRequestHeader('Content-Type', 'image/bmp');
+    xhr.upload.onprogress = function (ev) {
+        if (!ev.lengthComputable) return;
+        var pct = (ev.loaded / ev.total * 100).toFixed(1);
+        $g.textContent = '正在上传 ' + pct + '%';
     };
-    xhr.onload = function(){
-        sendBtn.disabled = false;
-        removeLoadingTip();
-        if(xhr.status>=200&&xhr.status<300) alert('上传成功：'+xhr.responseText);
-        else alert('上传失败！服务器返回错误');
+    xhr.onload = function () {
+        $A.disabled = false;
+        $j();
+        if (xhr.status >= 200 && xhr.status < 300)
+            alert('上传成功：' + xhr.responseText);
+        else
+            alert('上传失败！服务器返回错误');
     };
-    xhr.onerror = function(){
-        sendBtn.disabled = false;
-        removeLoadingTip();
+    xhr.onerror = function () {
+        $A.disabled = false;
+        $j();
         console.error('网络异常');
         alert('上传失败！网络错误');
     };
     xhr.timeout = 15000;
-    xhr.ontimeout = function(){
-        sendBtn.disabled = false;
-        removeLoadingTip();
+    xhr.ontimeout = function () {
+        $A.disabled = false;
+        $j();
         alert('上传超时，请检查Wi-Fi连接');
     };
-    xhr.send(new Blob([buildBMP()],{type:'image/bmp'}));
+    xhr.send(new Blob([$ag()], { type: 'image/bmp' }));
 }
 
-/* ---------- 滑块按算法隔离显示 ---------- */
-function showSliders(algo){
-    getElm('row_mono').style.display = algo==='lvl' ? '' : 'none';
-    getElm('row_err').style.display  = algo==='dif' ? '' : 'none';
+function $n(algo) {
+    $a('row_mono').style.display = algo === 'lvl' ? '' : 'none';
+    $a('row_err').style.display = algo === 'dif' ? '' : 'none';
 }
 
-/* ---------- 滑块↔数值框同步 ---------- */
-function syncSlider(id){
-    var range = getElm('nud_'+id);
-    var val = getElm('val_'+id);
-    val.value = range.value;
-}
-function syncRange(id){
-    var range = getElm('nud_'+id);
-    var val = getElm('val_'+id);
-    range.value = val.value;
+function $R(id) {
+    var $ai = $a('nud_' + id);
+    var val = $a('val_' + id);
+    val.value = $ai.value;
 }
 
-/* ---------- 初始化 ---------- */
-window.onload = function(){
-    var sb = getElm('srcBox');
-    sb.ondragenter=ignoreDrag; sb.ondragover=ignoreDrag; sb.ondrop=drop;
-    getElm('Refresh_Btn').addEventListener('click',function(){
-        dX = Math.max(0, parseInt(getElm('nud_x').value)||0);
-        dY = Math.max(0, parseInt(getElm('nud_y').value)||0);
-        drawCropBox();
-    });
-    ['bright','cont','mono','err'].forEach(function(id){
-        getElm('nud_'+id).addEventListener('input',function(){
-            syncSlider(id);
-            var a = curAlgo;
-            if(id==='bright'||id==='cont'){ if(a) procImg(a); }
-            else if(id==='mono'){ if(a==='lvl') procImg('lvl'); }
-            else if(id==='err'){ if(a==='dif') procImg('dif'); }
+function $ac(id) {
+    var $ai = $a('nud_' + id);
+    var val = $a('val_' + id);
+    $ai.value = val.value;
+}
+
+function $I(f) {
+    $N = f;
+    $a('Fit_Stretch').className = 'fit-btn' + (f === 'stretch' ? ' on' : '');
+    $a('Fit_Contain').className = 'fit-btn' + (f === 'contain' ? ' on' : '');
+    $a('Fit_Cover').className = 'fit-btn' + (f === 'cover' ? ' on' : '');
+    if ($a('canvas')) $k($d, $f);
+}
+
+window.onload = function () {
+    var sb = $a('srcBox');
+    sb.ondragenter = $B;
+    sb.ondragover = $B;
+    sb.ondrop = $at;
+
+    ['nud_x1', 'nud_y1', 'nud_x2', 'nud_y2'].forEach(function (id) {
+        $a(id).addEventListener('input', function () {
+            var r = $r();
+            dX = r.x;
+            dY = r.y;
+            dW = r.w;
+            dH = r.h;
+            $e();
+            $l();
         });
-        getElm('val_'+id).addEventListener('change',function(){
-            syncRange(id);
-            var a = curAlgo;
-            if(id==='bright'||id==='cont'){ if(a) procImg(a); }
-            else if(id==='mono'){ if(a==='lvl') procImg('lvl'); }
-            else if(id==='err'){ if(a==='dif') procImg('dif'); }
+    });
+
+    var $X = $a('source');
+    $X.addEventListener('pointerdown', $Y);
+    $X.addEventListener('pointermove', $Z);
+    $X.addEventListener('pointerup', $U);
+    $X.addEventListener('pointercancel', $U);
+
+    window.addEventListener('resize', function () {
+        if ($b) $e();
+    });
+
+    ['bright', 'cont', 'mono', 'err'].forEach(function (id) {
+        $a('nud_' + id).addEventListener('input', function () {
+            $R(id);
+            var a = $d;
+            if (!$a('canvas')) return;
+            if (id === 'bright' || id === 'cont') {
+                $k(a, $f);
+            } else if (id === 'mono') {
+                if (a === 'lvl') $k('lvl', $f);
+            } else if (id === 'err') {
+                if (a === 'dif') $k('dif', $f);
+            }
+        });
+        $a('val_' + id).addEventListener('change', function () {
+            $ac(id);
+            var a = $d;
+            if (!$a('canvas')) return;
+            if (id === 'bright' || id === 'cont') {
+                $k(a, $f);
+            } else if (id === 'mono') {
+                if (a === 'lvl') $k('lvl', $f);
+            } else if (id === 'err') {
+                if (a === 'dif') $k('dif', $f);
+            }
         });
     });
-    getElm('Input_Button').addEventListener('click',function(){getElm('File_Input').click();});
-    getElm('File_Input').addEventListener('change',function(e){processFiles(e.target.files);});
-    getElm('Lvl_Button').addEventListener('click',function(){showSliders('lvl');procImg('lvl');});
-    getElm('Dif_Button').addEventListener('click',function(){showSliders('dif');procImg('dif');});
-    getElm('Send_Button').addEventListener('click',uploadImage);
+
+    $a('Input_Button').addEventListener('click', function () {
+        $a('File_Input').click();
+    });
+    $a('File_Input').addEventListener('change', function (e) {
+        $u(e.target.files);
+    });
+    $a('Lvl_Button').addEventListener('click', function () {
+        $S('lvl');
+    });
+    $a('Dif_Button').addEventListener('click', function () {
+        $S('dif');
+    });
+    $a('Crop_Button').addEventListener('click', function () {
+        $n($d);
+        $k($d, false);
+    });
+    $a('Full_Button').addEventListener('click', function () {
+        $n($d);
+        $k($d, true);
+    });
+    $a('Fit_Stretch').addEventListener('click', function () {
+        $I('stretch');
+    });
+    $a('Fit_Contain').addEventListener('click', function () {
+        $I('contain');
+    });
+    $a('Fit_Cover').addEventListener('click', function () {
+        $I('cover');
+    });
+    $I('stretch');
+    $n($d);
+    $m();
+    $a('Send_Button').addEventListener('click', $M);
 };
