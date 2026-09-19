@@ -411,7 +411,14 @@ function $j() {
     }
 }
 
+var is = false;
+
 function $M() {
+    if (is) {
+        alert('无法再次上传，请等待图片刷新完成的3分钟后唤醒重连');
+        return;
+    }
+
     if (!$d || !$a('canvas')) {
         alert('请先选择图片并执行一次转换');
         return;
@@ -430,10 +437,12 @@ function $M() {
     xhr.onload = function () {
         $A.disabled = false;
         $j();
-        if (xhr.status >= 200 && xhr.status < 300)
-            alert('上传成功：' + xhr.responseText);
-        else
-            alert('上传失败！服务器返回错误');
+        if (xhr.status >= 200 && xhr.status < 300) {
+            is = true;
+            alert('上传成功，图片刷新中...');
+        } else {
+            alert('上传失败，请重传或重连WiFi，仍失败则按“电源按键”进入休眠后唤醒重试');
+        }
     };
     xhr.onerror = function () {
         $A.disabled = false;

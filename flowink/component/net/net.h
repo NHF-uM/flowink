@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void wifi_init(void);
-void wifi_deinit1(void);
+void my_wifi_deinit(void);
 
 void http_set_revc_buf(uint8_t *bmp_buf);
 

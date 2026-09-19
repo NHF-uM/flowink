@@ -73,9 +73,9 @@ void app_mode_server_handler(void)
     show_pic_server_bmp();
     show_pic_free();
 
-    LOG_DBG("Server mode finished, stopping HTTP server and deinitializing Wi-Fi...");
+    LOG_DBG("Stopping HTTP server and deinitializing Wi-Fi...");
     http_server_stop();
-    wifi_deinit1();
+    my_wifi_deinit();
 
     LOG_DBG("Server mode finished, enter deep sleep after 2 seconds");
     app_enter_sleep(24UL * 3600);
